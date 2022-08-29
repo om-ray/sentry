@@ -222,18 +222,29 @@ def get_project_key():
 
 
 def traces_sampler(sampling_context):
+    print("RATE", float(settings.SENTRY_BACKEND_APM_SAMPLING or 0))
+    if "wsgi_environ" in sampling_context:
+        return 1
+
     # If there's already a sampling decision, just use that
+    print(sampling_context)
+    print(sampling_context["parent_sampled"])
     if sampling_context["parent_sampled"] is not None:
+        return 0
         return sampling_context["parent_sampled"]
 
+    # print(sampling_context)
     if "celery_job" in sampling_context:
         task_name = sampling_context["celery_job"].get("task")
-
+        print("TASK NAME", task_name)
+        return 0
         if task_name in SAMPLED_TASKS:
+            print("SAMPLED", SAMPLED_TASKS[task_name])
             return SAMPLED_TASKS[task_name]
 
     # Resolve the url, and see if we want to set our own sampling
     if "wsgi_environ" in sampling_context:
+        # return True
         try:
             match = resolve(sampling_context["wsgi_environ"].get("PATH_INFO"))
             if match and match.url_name in SAMPLED_URL_NAMES:
@@ -242,6 +253,7 @@ def traces_sampler(sampling_context):
             # On errors or 404, continue to default sampling decision
             pass
 
+    print("RATE", float(settings.SENTRY_BACKEND_APM_SAMPLING or 0))
     # Default to the sampling rate in settings
     return float(settings.SENTRY_BACKEND_APM_SAMPLING or 0)
 
@@ -316,6 +328,7 @@ def configure_sdk():
 
             # Assume only transactions get sent via envelopes
             if options.get("transaction-events.force-disable-internal-project"):
+                print("filtering internal")
                 return
 
             self._capture_anything("capture_envelope", envelope)
@@ -324,6 +337,7 @@ def configure_sdk():
             if event.get("type") == "transaction" and options.get(
                 "transaction-events.force-disable-internal-project"
             ):
+                print("filtering internal")
                 return
 
             self._capture_anything("capture_event", event)

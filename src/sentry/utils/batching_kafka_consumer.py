@@ -330,7 +330,7 @@ class BatchingKafkaConsumer:
         if self.producer:
             self.producer.poll(0.0)
 
-        msg = self.consumer.poll(timeout=1.0)
+        msg = self.consumer.poll(timeout=0.1)
 
         if msg is None:
             return
@@ -358,6 +358,7 @@ class BatchingKafkaConsumer:
 
         try:
             result = self.worker.process_message(msg)
+            print("PROCESSED")
         except Exception:
             if self.dead_letter_topic:
                 logger.exception("Error handling message, sending to dead letter topic.")
@@ -382,6 +383,7 @@ class BatchingKafkaConsumer:
             self.__batch_messages_processed_count += 1
             self.__batch_processing_time_ms += duration
             self.__record_timing("process_message", duration)
+            print("PROCESS MESSAGE", duration)
 
             topic_partition_key = (msg.topic(), msg.partition())
             if topic_partition_key in self.__batch_offsets:
@@ -425,7 +427,7 @@ class BatchingKafkaConsumer:
 
         batch_by_size = len(self.__batch_results) >= self.max_batch_size
         batch_by_time = self.__batch_deadline and time.time() > self.__batch_deadline
-        if not (force or batch_by_size or batch_by_time):
+        if False:  # not (force or batch_by_size or batch_by_time):
             return
 
         logger.info(

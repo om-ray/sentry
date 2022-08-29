@@ -518,12 +518,15 @@ class OrganizationEventsTraceLightEndpoint(OrganizationEventsTraceEndpointBase):
 class OrganizationEventsTraceEndpoint(OrganizationEventsTraceEndpointBase):
     def get(self, request: HttpRequest, organization: Organization, trace_id: str) -> HttpResponse:
         if request.GET.get("neo4j"):
+            print("NEO4J!!!!")
             sentry_sdk.set_tag("neo4j", "1")
             with sentry_sdk.start_span(op="neo4j", description="session"):
                 with neo4j_driver.session() as session:
                     trace = session.read_transaction(self.get_trace, trace_id)
+                    print("TRACE", trace)
                     return Response(trace)
 
+        print("LAME!!!")
         sentry_sdk.set_tag("neo4j", "0")
         return super().get(request, organization, trace_id)
 

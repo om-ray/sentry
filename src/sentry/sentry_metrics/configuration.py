@@ -14,7 +14,6 @@ from arroyo import configure_metrics
 class MetricPathKey(Enum):
     RELEASE_HEALTH = "release-health"
     PERFORMANCE = "performance"
-    GENERIC_METRICS = "generic-metrics"
 
 
 # Rate limiter namespaces, the postgres (PG)

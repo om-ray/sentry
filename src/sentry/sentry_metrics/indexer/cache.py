@@ -5,7 +5,7 @@ from typing import Mapping, MutableMapping, Optional, Sequence, Set
 from django.conf import settings
 from django.core.cache import caches
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.base import (
     FetchType,
     KeyCollection,
@@ -103,7 +103,7 @@ class CachingIndexer(StringIndexer):
         self.indexer = indexer
 
     def bulk_record(
-        self, use_case_id: UseCaseKey, org_strings: Mapping[int, Set[str]]
+        self, use_case_id: MetricPathKey, org_strings: Mapping[int, Set[str]]
     ) -> KeyResults:
         cache_keys = KeyCollection(org_strings)
         metrics.gauge("sentry_metrics.indexer.lookups_per_batch", value=cache_keys.size)
@@ -145,11 +145,11 @@ class CachingIndexer(StringIndexer):
         )
         return cache_key_results.merge(db_record_key_results)
 
-    def record(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def record(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         result = self.bulk_record(use_case_id=use_case_id, org_strings={org_id: {string}})
         return result[org_id][string]
 
-    def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def resolve(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         key = f"{org_id}:{string}"
         result = self.cache.get(key, use_case_id.value)
 
@@ -165,7 +165,7 @@ class CachingIndexer(StringIndexer):
 
         return id
 
-    def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
+    def reverse_resolve(self, use_case_id: MetricPathKey, org_id: int, id: int) -> Optional[str]:
         return self.indexer.reverse_resolve(use_case_id, org_id, id)
 
     def resolve_shared_org(self, string: str) -> Optional[int]:

@@ -11,13 +11,14 @@ import sentry_sdk
 from arroyo import configure_metrics
 
 
-class UseCaseKey(Enum):
+class MetricPathKey(Enum):
     RELEASE_HEALTH = "release-health"
     PERFORMANCE = "performance"
+    GENERIC_METRICS = "generic-metrics"
 
 
 # Rate limiter namespaces, the postgres (PG)
-# values are the same as UseCaseKey to keep
+# values are the same as MetricPathKey to keep
 # backwards compatibility
 RELEASE_HEALTH_PG_NAMESPACE = "releasehealth"
 PERFORMANCE_PG_NAMESPACE = "performance"
@@ -37,7 +38,7 @@ class MetricsIngestConfiguration:
     db_backend_options: Mapping[str, Any]
     input_topic: str
     output_topic: str
-    use_case_id: UseCaseKey
+    use_case_id: MetricPathKey
     internal_metrics_tag: Optional[str]
     writes_limiter_cluster_options: Mapping[str, Any]
     writes_limiter_namespace: str
@@ -51,7 +52,7 @@ class MetricsIngestConfiguration:
 
 
 _METRICS_INGEST_CONFIG_BY_USE_CASE: MutableMapping[
-    Tuple[UseCaseKey, IndexerStorage], MetricsIngestConfiguration
+    Tuple[MetricPathKey, IndexerStorage], MetricsIngestConfiguration
 ] = dict()
 
 
@@ -60,7 +61,7 @@ def _register_ingest_config(config: MetricsIngestConfiguration) -> None:
 
 
 def get_ingest_config(
-    use_case_key: UseCaseKey, db_backend: IndexerStorage
+    use_case_key: MetricPathKey, db_backend: IndexerStorage
 ) -> MetricsIngestConfiguration:
     if len(_METRICS_INGEST_CONFIG_BY_USE_CASE) == 0:
         from django.conf import settings
@@ -71,7 +72,7 @@ def get_ingest_config(
                 db_backend_options={},
                 input_topic=settings.KAFKA_INGEST_METRICS,
                 output_topic=settings.KAFKA_SNUBA_METRICS,
-                use_case_id=UseCaseKey.RELEASE_HEALTH,
+                use_case_id=MetricPathKey.RELEASE_HEALTH,
                 internal_metrics_tag="release-health",
                 writes_limiter_cluster_options=settings.SENTRY_METRICS_INDEXER_WRITES_LIMITER_OPTIONS,
                 writes_limiter_namespace=RELEASE_HEALTH_PG_NAMESPACE,
@@ -87,7 +88,7 @@ def get_ingest_config(
                 db_backend_options={},
                 input_topic=settings.KAFKA_INGEST_PERFORMANCE_METRICS,
                 output_topic=settings.KAFKA_SNUBA_GENERIC_METRICS,
-                use_case_id=UseCaseKey.PERFORMANCE,
+                use_case_id=MetricPathKey.PERFORMANCE,
                 internal_metrics_tag="perf",
                 writes_limiter_cluster_options=settings.SENTRY_METRICS_INDEXER_WRITES_LIMITER_OPTIONS_PERFORMANCE,
                 writes_limiter_namespace=PERFORMANCE_PG_NAMESPACE,
@@ -106,7 +107,7 @@ def get_ingest_config(
                 db_backend_options=settings.SENTRY_METRICS_INDEXER_SPANNER_OPTIONS,
                 input_topic=settings.KAFKA_INGEST_METRICS,
                 output_topic=settings.KAFKA_SNUBA_GENERICS_METRICS_CS,
-                use_case_id=UseCaseKey.RELEASE_HEALTH,
+                use_case_id=MetricPathKey.RELEASE_HEALTH,
                 internal_metrics_tag="release-health-spanner",
                 writes_limiter_cluster_options=settings.SENTRY_METRICS_INDEXER_WRITES_LIMITER_OPTIONS,
                 writes_limiter_namespace=RELEASE_HEALTH_CS_NAMESPACE,
@@ -123,7 +124,7 @@ def get_ingest_config(
                 db_backend_options=settings.SENTRY_METRICS_INDEXER_SPANNER_OPTIONS,
                 input_topic=settings.KAFKA_INGEST_PERFORMANCE_METRICS,
                 output_topic=settings.KAFKA_SNUBA_GENERICS_METRICS_CS,
-                use_case_id=UseCaseKey.PERFORMANCE,
+                use_case_id=MetricPathKey.PERFORMANCE,
                 internal_metrics_tag="perf-spanner",
                 writes_limiter_cluster_options=settings.SENTRY_METRICS_INDEXER_WRITES_LIMITER_OPTIONS_PERFORMANCE,
                 writes_limiter_namespace=PERFORMANCE_CS_NAMESPACE,

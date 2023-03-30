@@ -10,7 +10,7 @@ from sentry.ratelimits.cardinality import (
     RequestedQuota,
     Timestamp,
 )
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.consumers.indexer.batch import PartitionIdxOffset
 from sentry.sentry_metrics.indexer.limiters.cardinality import TimeseriesCardinalityLimiter
 
@@ -76,7 +76,7 @@ def test_reject_all(set_sentry_option):
         limiter = TimeseriesCardinalityLimiter("", backend)
 
         result = limiter.check_cardinality_limits(
-            UseCaseKey.RELEASE_HEALTH,
+            MetricPathKey.RELEASE_HEALTH,
             {
                 PartitionIdxOffset(0, 0): {"org_id": 1, "name": "foo", "tags": {}},
                 PartitionIdxOffset(0, 1): {"org_id": 1, "name": "bar", "tags": {}},
@@ -97,7 +97,7 @@ def test_reject_partial(set_sentry_option):
         limiter = TimeseriesCardinalityLimiter("", backend)
 
         result = limiter.check_cardinality_limits(
-            UseCaseKey.RELEASE_HEALTH,
+            MetricPathKey.RELEASE_HEALTH,
             {
                 PartitionIdxOffset(0, 0): {"org_id": 1, "name": "foo", "tags": {}},
                 PartitionIdxOffset(0, 1): {"org_id": 1, "name": "bar", "tags": {}},
@@ -115,7 +115,7 @@ def test_accept_all(set_sentry_option):
         limiter = TimeseriesCardinalityLimiter("", backend)
 
         result = limiter.check_cardinality_limits(
-            UseCaseKey.RELEASE_HEALTH,
+            MetricPathKey.RELEASE_HEALTH,
             {
                 PartitionIdxOffset(0, 0): {"org_id": 1, "name": "foo", "tags": {}},
                 PartitionIdxOffset(0, 1): {"org_id": 1, "name": "bar", "tags": {}},
@@ -141,7 +141,7 @@ def test_sample_rate_zero(set_sentry_option):
         limiter = TimeseriesCardinalityLimiter("", backend)
 
         result = limiter.check_cardinality_limits(
-            UseCaseKey.RELEASE_HEALTH,
+            MetricPathKey.RELEASE_HEALTH,
             {
                 PartitionIdxOffset(0, 0): {"org_id": 1, "name": "foo", "tags": {}},
                 PartitionIdxOffset(0, 1): {"org_id": 1, "name": "bar", "tags": {}},
@@ -172,7 +172,7 @@ def test_sample_rate_half(set_sentry_option):
         limiter = TimeseriesCardinalityLimiter("", backend)
 
         result = limiter.check_cardinality_limits(
-            UseCaseKey.RELEASE_HEALTH,
+            MetricPathKey.RELEASE_HEALTH,
             {
                 PartitionIdxOffset(0, 0): {"org_id": 1, "name": "foo", "tags": {}},
                 PartitionIdxOffset(0, 1): {"org_id": 99, "name": "bar", "tags": {}},

@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 from typing import Any, Mapping, Sequence
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 
 _COLUMNS = [
     "id",
@@ -27,12 +27,12 @@ SpannerIndexerModel = namedtuple(
     ],
 )
 
-DATABASE_PARAMETERS: Mapping[UseCaseKey, Mapping[str, str]] = {
-    UseCaseKey.PERFORMANCE: {
+DATABASE_PARAMETERS: Mapping[MetricPathKey, Mapping[str, str]] = {
+    MetricPathKey.PERFORMANCE: {
         "table_name": "perfstringindexer",
         "unique_organization_string_index_name": "unique_organization_string_index",
     },
-    UseCaseKey.RELEASE_HEALTH: {
+    MetricPathKey.RELEASE_HEALTH: {
         "table_name": "perfstringindexer",
         "unique_organization_string_index_name": "unique_organization_string_index",
     },

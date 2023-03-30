@@ -1,8 +1,8 @@
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.mock import MockIndexer
 from sentry.sentry_metrics.indexer.strings import SHARED_STRINGS, StaticStringIndexer
 
-use_case_id = UseCaseKey("release-health")
+use_case_id = MetricPathKey("release-health")
 
 
 def test_static_strings_only() -> None:

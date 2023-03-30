@@ -6,7 +6,7 @@ import google.api_core.exceptions
 from django.conf import settings
 from google.cloud import spanner  # type: ignore[attr-defined]
 
-from sentry.sentry_metrics.configuration import IndexerStorage, UseCaseKey, get_ingest_config
+from sentry.sentry_metrics.configuration import IndexerStorage, MetricPathKey, get_ingest_config
 from sentry.sentry_metrics.indexer.base import (
     FetchType,
     KeyCollection,
@@ -100,11 +100,11 @@ class RawCloudSpannerIndexer(StringIndexer):
         self.__codec = IdCodec()
 
     @staticmethod
-    def _get_table_name(use_case_id: UseCaseKey) -> str:
+    def _get_table_name(use_case_id: MetricPathKey) -> str:
         return DATABASE_PARAMETERS[use_case_id].get("table_name", "")
 
     @staticmethod
-    def _get_unique_org_string_index_name(use_case_id: UseCaseKey) -> str:
+    def _get_unique_org_string_index_name(use_case_id: MetricPathKey) -> str:
         return DATABASE_PARAMETERS[use_case_id].get("unique_organization_string_index_name", "")
 
     def validate(self) -> None:
@@ -119,7 +119,7 @@ class RawCloudSpannerIndexer(StringIndexer):
                 pass
 
     def _get_db_records(
-        self, use_case_id: UseCaseKey, db_keys: KeyCollection
+        self, use_case_id: MetricPathKey, db_keys: KeyCollection
     ) -> Sequence[KeyResult]:
         spanner_keyset = []
         for organization_id, string in db_keys.as_tuples():
@@ -177,7 +177,7 @@ class RawCloudSpannerIndexer(StringIndexer):
 
     def _insert_db_records(
         self,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
         rows_to_insert: Sequence[SpannerIndexerModel],
         key_results: KeyResults,
     ) -> None:
@@ -197,7 +197,7 @@ class RawCloudSpannerIndexer(StringIndexer):
 
     def _insert_collisions_not_handled(
         self,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
         rows_to_insert: Sequence[SpannerIndexerModel],
         key_results: KeyResults,
     ) -> None:
@@ -244,7 +244,7 @@ class RawCloudSpannerIndexer(StringIndexer):
 
     def _insert_collisions_handled(
         self,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
         rows_to_insert: Sequence[SpannerIndexerModel],
         key_results: KeyResults,
     ) -> None:
@@ -342,7 +342,7 @@ class RawCloudSpannerIndexer(StringIndexer):
                 )
 
     def bulk_record(
-        self, use_case_id: UseCaseKey, org_strings: Mapping[int, Set[str]]
+        self, use_case_id: MetricPathKey, org_strings: Mapping[int, Set[str]]
     ) -> KeyResults:
         db_read_keys = KeyCollection(org_strings)
 
@@ -395,12 +395,12 @@ class RawCloudSpannerIndexer(StringIndexer):
 
         return db_read_key_results.merge(db_write_key_results).merge(rate_limited_key_results)
 
-    def record(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def record(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Store a string and return the integer ID generated for it"""
         result = self.bulk_record(use_case_id=use_case_id, org_strings={org_id: {string}})
         return result[org_id][string]
 
-    def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def resolve(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Resolve a string to an integer ID"""
         with self.database.snapshot() as snapshot:
             results = snapshot.read(
@@ -416,7 +416,7 @@ class RawCloudSpannerIndexer(StringIndexer):
         else:
             return int(self.__codec.decode(results_list[0][0]))
 
-    def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
+    def reverse_resolve(self, use_case_id: MetricPathKey, org_id: int, id: int) -> Optional[str]:
         """Resolve an integer ID to a string"""
         with self.database.snapshot() as snapshot:
             results = snapshot.read(

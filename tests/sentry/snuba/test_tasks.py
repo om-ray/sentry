@@ -12,7 +12,7 @@ from snuba_sdk import And, Column, Condition, Entity, Function, Op, Or, Query
 from sentry.incidents.logic import query_datasets_to_type
 from sentry.search.events.constants import METRICS_MAP
 from sentry.sentry_metrics import indexer
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.utils import resolve, resolve_tag_key, resolve_tag_value
 from sentry.snuba.dataset import Dataset
 from sentry.snuba.entity_subscription import (
@@ -38,12 +38,12 @@ from sentry.utils.snuba import _snuba_pool
 pytestmark = pytest.mark.sentry_metrics
 
 
-def indexer_record(use_case_id: UseCaseKey, org_id: int, string: str) -> int:
+def indexer_record(use_case_id: MetricPathKey, org_id: int, string: str) -> int:
     return indexer.record(use_case_id=use_case_id, org_id=org_id, string=string)
 
 
-perf_indexer_record = partial(indexer_record, UseCaseKey.PERFORMANCE)
-rh_indexer_record = partial(indexer_record, UseCaseKey.RELEASE_HEALTH)
+perf_indexer_record = partial(indexer_record, MetricPathKey.PERFORMANCE)
+rh_indexer_record = partial(indexer_record, MetricPathKey.RELEASE_HEALTH)
 
 
 class BaseSnubaTaskTest(metaclass=abc.ABCMeta):
@@ -381,7 +381,7 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(name="metric_id"),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, metric_mri
+                                                MetricPathKey.RELEASE_HEALTH, org_id, metric_mri
                                             ),
                                         ],
                                         alias=None,
@@ -391,13 +391,13 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(
                                                 name=resolve_tag_key(
-                                                    UseCaseKey.RELEASE_HEALTH,
+                                                    MetricPathKey.RELEASE_HEALTH,
                                                     org_id,
                                                     "session.status",
                                                 )
                                             ),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, "init"
+                                                MetricPathKey.RELEASE_HEALTH, org_id, "init"
                                             ),
                                         ],
                                     ),
@@ -418,7 +418,7 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(name="metric_id"),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, metric_mri
+                                                MetricPathKey.RELEASE_HEALTH, org_id, metric_mri
                                             ),
                                         ],
                                         alias=None,
@@ -428,13 +428,13 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(
                                                 name=resolve_tag_key(
-                                                    UseCaseKey.RELEASE_HEALTH,
+                                                    MetricPathKey.RELEASE_HEALTH,
                                                     org_id,
                                                     "session.status",
                                                 )
                                             ),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, "crashed"
+                                                MetricPathKey.RELEASE_HEALTH, org_id, "crashed"
                                             ),
                                         ],
                                     ),
@@ -454,7 +454,7 @@ class BuildSnqlQueryTest(TestCase):
                                 parameters=[
                                     Column(name="metric_id"),
                                     resolve_tag_value(
-                                        UseCaseKey.RELEASE_HEALTH, org_id, metric_mri
+                                        MetricPathKey.RELEASE_HEALTH, org_id, metric_mri
                                     ),
                                 ],
                                 alias=None,
@@ -474,7 +474,7 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(name="metric_id"),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, metric_mri
+                                                MetricPathKey.RELEASE_HEALTH, org_id, metric_mri
                                             ),
                                         ],
                                         alias=None,
@@ -484,13 +484,13 @@ class BuildSnqlQueryTest(TestCase):
                                         parameters=[
                                             Column(
                                                 name=resolve_tag_key(
-                                                    UseCaseKey.RELEASE_HEALTH,
+                                                    MetricPathKey.RELEASE_HEALTH,
                                                     org_id,
                                                     "session.status",
                                                 )
                                             ),
                                             resolve_tag_value(
-                                                UseCaseKey.RELEASE_HEALTH, org_id, "crashed"
+                                                MetricPathKey.RELEASE_HEALTH, org_id, "crashed"
                                             ),
                                         ],
                                     ),
@@ -597,7 +597,9 @@ class BuildSnqlQueryTest(TestCase):
 
     def test_simple_performance_metrics(self):
         with Feature("organizations:use-metrics-layer"):
-            metric_id = resolve(UseCaseKey.PERFORMANCE, self.organization.id, METRICS_MAP["user"])
+            metric_id = resolve(
+                MetricPathKey.PERFORMANCE, self.organization.id, METRICS_MAP["user"]
+            )
             self.run_test(
                 SnubaQuery.Type.PERFORMANCE,
                 Dataset.Metrics,
@@ -659,7 +661,7 @@ class BuildSnqlQueryTest(TestCase):
             version = "something"
             self.create_release(self.project, version=version)
             metric_id = resolve(
-                UseCaseKey.PERFORMANCE, self.organization.id, METRICS_MAP["transaction.duration"]
+                MetricPathKey.PERFORMANCE, self.organization.id, METRICS_MAP["transaction.duration"]
             )
             perf_indexer_record(self.organization.id, "release")
             perf_indexer_record(self.organization.id, version)
@@ -668,10 +670,10 @@ class BuildSnqlQueryTest(TestCase):
                 Condition(Column("project_id"), Op.IN, [self.project.id]),
                 Condition(
                     Column(
-                        resolve_tag_key(UseCaseKey.PERFORMANCE, self.organization.id, "release")
+                        resolve_tag_key(MetricPathKey.PERFORMANCE, self.organization.id, "release")
                     ),
                     Op.EQ,
-                    resolve_tag_value(UseCaseKey.PERFORMANCE, self.organization.id, version),
+                    resolve_tag_value(MetricPathKey.PERFORMANCE, self.organization.id, version),
                 ),
                 Condition(Column("metric_id"), Op.IN, [metric_id]),
             ]
@@ -731,7 +733,7 @@ class BuildSnqlQueryTest(TestCase):
             # Note: We don't support user queries on the performance metrics dataset, so using a
             # different tag here.
             metric_id = resolve(
-                UseCaseKey.PERFORMANCE, self.organization.id, METRICS_MAP["transaction.duration"]
+                MetricPathKey.PERFORMANCE, self.organization.id, METRICS_MAP["transaction.duration"]
             )
             tag_key = "some_tag"
             tag_value = "some_value"
@@ -742,9 +744,11 @@ class BuildSnqlQueryTest(TestCase):
                 Condition(Column("org_id"), Op.EQ, self.organization.id),
                 Condition(Column("project_id"), Op.IN, [self.project.id]),
                 Condition(
-                    Column(resolve_tag_key(UseCaseKey.PERFORMANCE, self.organization.id, tag_key)),
+                    Column(
+                        resolve_tag_key(MetricPathKey.PERFORMANCE, self.organization.id, tag_key)
+                    ),
                     Op.EQ,
-                    resolve_tag_value(UseCaseKey.PERFORMANCE, self.organization.id, tag_value),
+                    resolve_tag_value(MetricPathKey.PERFORMANCE, self.organization.id, tag_value),
                 ),
                 Condition(Column("metric_id"), Op.IN, [metric_id]),
             ]
@@ -942,15 +946,17 @@ class BuildSnqlQueryTest(TestCase):
                 Condition(
                     Column(
                         name=resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "session.status"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "session.status"
                         )
                     ),
                     Op.IN,
                     [
                         resolve_tag_value(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "crashed"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "crashed"
                         ),
-                        resolve_tag_value(UseCaseKey.RELEASE_HEALTH, self.organization.id, "init"),
+                        resolve_tag_value(
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "init"
+                        ),
                     ],
                 ),
                 Condition(
@@ -958,7 +964,7 @@ class BuildSnqlQueryTest(TestCase):
                     Op.IN,
                     [
                         resolve(
-                            UseCaseKey.RELEASE_HEALTH,
+                            MetricPathKey.RELEASE_HEALTH,
                             self.organization.id,
                             SessionMRI.SESSION.value,
                         )
@@ -991,7 +997,9 @@ class BuildSnqlQueryTest(TestCase):
                     Op.IN,
                     [
                         resolve(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, SessionMRI.USER.value
+                            MetricPathKey.RELEASE_HEALTH,
+                            self.organization.id,
+                            SessionMRI.USER.value,
                         )
                     ],
                 ),
@@ -1030,43 +1038,45 @@ class BuildSnqlQueryTest(TestCase):
                 Condition(
                     Column(
                         name=resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "release"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "release"
                         )
                     ),
                     Op.EQ,
                     resolve_tag_value(
-                        UseCaseKey.RELEASE_HEALTH, self.organization.id, "ahmed@12.2"
+                        MetricPathKey.RELEASE_HEALTH, self.organization.id, "ahmed@12.2"
                     ),
                 ),
                 Condition(
                     Column(
                         name=resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "session.status"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "session.status"
                         )
                     ),
                     Op.IN,
                     [
                         resolve_tag_value(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "crashed"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "crashed"
                         ),
-                        resolve_tag_value(UseCaseKey.RELEASE_HEALTH, self.organization.id, "init"),
+                        resolve_tag_value(
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "init"
+                        ),
                     ],
                 ),
                 Condition(
                     Column(
                         resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "environment"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "environment"
                         )
                     ),
                     Op.EQ,
-                    resolve_tag_value(UseCaseKey.RELEASE_HEALTH, self.organization.id, env.name),
+                    resolve_tag_value(MetricPathKey.RELEASE_HEALTH, self.organization.id, env.name),
                 ),
                 Condition(
                     Column(name="metric_id"),
                     Op.IN,
                     [
                         resolve(
-                            UseCaseKey.RELEASE_HEALTH,
+                            MetricPathKey.RELEASE_HEALTH,
                             self.organization.id,
                             SessionMRI.SESSION.value,
                         )
@@ -1110,29 +1120,31 @@ class BuildSnqlQueryTest(TestCase):
                 Condition(
                     Column(
                         name=resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "release"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "release"
                         )
                     ),
                     Op.EQ,
                     resolve_tag_value(
-                        UseCaseKey.RELEASE_HEALTH, self.organization.id, "ahmed@12.2"
+                        MetricPathKey.RELEASE_HEALTH, self.organization.id, "ahmed@12.2"
                     ),
                 ),
                 Condition(
                     Column(
                         resolve_tag_key(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, "environment"
+                            MetricPathKey.RELEASE_HEALTH, self.organization.id, "environment"
                         )
                     ),
                     Op.EQ,
-                    resolve_tag_value(UseCaseKey.RELEASE_HEALTH, self.organization.id, env.name),
+                    resolve_tag_value(MetricPathKey.RELEASE_HEALTH, self.organization.id, env.name),
                 ),
                 Condition(
                     Column(name="metric_id"),
                     Op.IN,
                     [
                         resolve(
-                            UseCaseKey.RELEASE_HEALTH, self.organization.id, SessionMRI.USER.value
+                            MetricPathKey.RELEASE_HEALTH,
+                            self.organization.id,
+                            SessionMRI.USER.value,
                         )
                     ],
                 ),

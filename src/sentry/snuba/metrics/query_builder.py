@@ -33,7 +33,7 @@ from sentry.api.utils import InvalidParams, get_date_range_from_params
 from sentry.exceptions import InvalidSearchQuery
 from sentry.models import Project
 from sentry.search.events.builder import UnresolvedQuery
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.utils import (
     STRING_NOT_FOUND,
     resolve_tag_key,
@@ -124,7 +124,7 @@ FUNCTION_ALLOWLIST = ("and", "or", "equals", "in", "tuple", "has", "match")
 
 
 def resolve_tags(
-    use_case_id: UseCaseKey,
+    use_case_id: MetricPathKey,
     org_id: int,
     input_: Any,
     is_tag_value: bool = False,
@@ -462,7 +462,7 @@ def get_date_range(params: Mapping) -> Tuple[datetime, datetime, int]:
     return start, end, interval
 
 
-def parse_tag(use_case_id: UseCaseKey, org_id: int, tag_string: str) -> str:
+def parse_tag(use_case_id: MetricPathKey, org_id: int, tag_string: str) -> str:
     tag_key = int(tag_string.replace("tags_raw[", "").replace("tags[", "").replace("]", ""))
     return reverse_resolve(use_case_id, org_id, tag_key)
 
@@ -625,7 +625,7 @@ class SnubaQueryBuilder:
         self,
         projects: Sequence[Project],
         metrics_query: MetricsQuery,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
     ):
         self._projects = projects
         self._metrics_query = metrics_query
@@ -637,7 +637,7 @@ class SnubaQueryBuilder:
     @staticmethod
     def generate_snql_for_action_by_fields(
         metric_action_by_field: MetricActionByField,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
         org_id: int,
         projects: Sequence[Project],
         is_column: bool = False,
@@ -848,7 +848,7 @@ class SnubaQueryBuilder:
         if self._metrics_query.include_series:
             series_limit = limit.limit * intervals_len
 
-            if self._use_case_id == UseCaseKey.PERFORMANCE:
+            if self._use_case_id == MetricPathKey.PERFORMANCE:
                 time_groupby_column = self.__generate_time_groupby_column_for_discover_queries(
                     self._metrics_query.interval
                 )
@@ -1021,7 +1021,7 @@ class SnubaResultConverter:
         fields_in_entities: dict,
         intervals: List[datetime],
         results,
-        use_case_id: UseCaseKey,
+        use_case_id: MetricPathKey,
     ):
         self._organization_id = organization_id
         self._intervals = intervals

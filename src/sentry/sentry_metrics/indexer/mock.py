@@ -2,7 +2,7 @@ import itertools
 from collections import defaultdict
 from typing import DefaultDict, Dict, Mapping, Optional, Set
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.base import (
     FetchType,
     KeyCollection,
@@ -25,7 +25,7 @@ class RawSimpleIndexer(StringIndexer):
         self._reverse: Dict[int, str] = {}
 
     def bulk_record(
-        self, use_case_id: UseCaseKey, org_strings: Mapping[int, Set[str]]
+        self, use_case_id: MetricPathKey, org_strings: Mapping[int, Set[str]]
     ) -> KeyResults:
         db_read_keys = KeyCollection(org_strings)
         db_read_key_results = KeyResults()
@@ -51,14 +51,14 @@ class RawSimpleIndexer(StringIndexer):
 
         return db_read_key_results.merge(db_write_key_results)
 
-    def record(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def record(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         return self._record(org_id, string)
 
-    def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def resolve(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         strs = self._strings[org_id]
         return strs.get(string)
 
-    def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
+    def reverse_resolve(self, use_case_id: MetricPathKey, org_id: int, id: int) -> Optional[str]:
         return self._reverse.get(id)
 
     def _record(self, org_id: int, string: str) -> Optional[int]:

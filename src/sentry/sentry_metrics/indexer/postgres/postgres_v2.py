@@ -9,7 +9,7 @@ from django.db.models import Q
 from psycopg2 import OperationalError
 from psycopg2.errorcodes import DEADLOCK_DETECTED
 
-from sentry.sentry_metrics.configuration import IndexerStorage, UseCaseKey, get_ingest_config
+from sentry.sentry_metrics.configuration import IndexerStorage, MetricPathKey, get_ingest_config
 from sentry.sentry_metrics.indexer.base import (
     FetchType,
     KeyCollection,
@@ -42,7 +42,7 @@ class PGStringIndexerV2(StringIndexer):
     and the corresponding reverse lookup.
     """
 
-    def _get_db_records(self, use_case_id: UseCaseKey, db_keys: KeyCollection) -> Any:
+    def _get_db_records(self, use_case_id: MetricPathKey, db_keys: KeyCollection) -> Any:
         conditions = []
         for pair in db_keys.as_tuples():
             organization_id, string = pair
@@ -91,7 +91,7 @@ class PGStringIndexerV2(StringIndexer):
             raise last_seen_exception
 
     def bulk_record(
-        self, use_case_id: UseCaseKey, org_strings: Mapping[int, Set[str]]
+        self, use_case_id: MetricPathKey, org_strings: Mapping[int, Set[str]]
     ) -> KeyResults:
         db_read_keys = KeyCollection(org_strings)
 
@@ -161,12 +161,12 @@ class PGStringIndexerV2(StringIndexer):
 
         return db_read_key_results.merge(db_write_key_results).merge(rate_limited_key_results)
 
-    def record(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def record(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Store a string and return the integer ID generated for it"""
         result = self.bulk_record(use_case_id=use_case_id, org_strings={org_id: {string}})
         return result[org_id][string]
 
-    def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def resolve(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Lookup the integer ID for a string.
 
         Returns None if the entry cannot be found.
@@ -180,7 +180,7 @@ class PGStringIndexerV2(StringIndexer):
 
         return id
 
-    def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
+    def reverse_resolve(self, use_case_id: MetricPathKey, org_id: int, id: int) -> Optional[str]:
         """Lookup the stored string for a given integer ID.
 
         Returns None if the entry cannot be found.
@@ -195,7 +195,7 @@ class PGStringIndexerV2(StringIndexer):
         string: str = obj.string
         return string
 
-    def _table(self, use_case_id: UseCaseKey) -> IndexerTable:
+    def _table(self, use_case_id: MetricPathKey) -> IndexerTable:
         return TABLE_MAPPING[use_case_id]
 
     def resolve_shared_org(self, string: str) -> Optional[int]:

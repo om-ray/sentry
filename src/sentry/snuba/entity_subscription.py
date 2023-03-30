@@ -24,7 +24,7 @@ from sentry import features
 from sentry.constants import CRASH_RATE_ALERT_AGGREGATE_ALIAS, CRASH_RATE_ALERT_SESSION_COUNT_ALIAS
 from sentry.exceptions import InvalidQuerySubscription, UnsupportedQuerySubscription
 from sentry.models import Environment, Organization
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.utils import (
     MetricIndexNotFound,
     resolve,
@@ -328,19 +328,19 @@ class BaseMetricsEntitySubscription(BaseEntitySubscription, ABC):
         if self.use_metrics_layer:
             return string
 
-        return resolve_tag_key(UseCaseKey.RELEASE_HEALTH, self.org_id, string)
+        return resolve_tag_key(MetricPathKey.RELEASE_HEALTH, self.org_id, string)
 
     def resolve_tag_value_if_needed(self, string: str) -> Union[str, int]:
         if self.use_metrics_layer:
             return string
 
-        return resolve_tag_value(UseCaseKey.RELEASE_HEALTH, self.org_id, string)
+        return resolve_tag_value(MetricPathKey.RELEASE_HEALTH, self.org_id, string)
 
     def resolve_tag_values_if_needed(self, strings: Sequence[str]) -> Sequence[Union[str, int]]:
         if self.use_metrics_layer:
             return strings
 
-        return resolve_tag_values(UseCaseKey.RELEASE_HEALTH, self.org_id, strings)
+        return resolve_tag_values(MetricPathKey.RELEASE_HEALTH, self.org_id, strings)
 
     def _get_environment_condition(self, environment_name: str) -> Condition:
         return Condition(
@@ -439,10 +439,10 @@ class BaseCrashRateMetricsEntitySubscription(BaseMetricsEntitySubscription):
         value_col_name = alias if alias else "value"
         try:
             translated_data: Dict[str, Any] = {}
-            session_status = resolve_tag_key(UseCaseKey.RELEASE_HEALTH, org_id, "session.status")
+            session_status = resolve_tag_key(MetricPathKey.RELEASE_HEALTH, org_id, "session.status")
             for row in data:
                 tag_value = reverse_resolve_tag_value(
-                    UseCaseKey.RELEASE_HEALTH, org_id, row[session_status]
+                    MetricPathKey.RELEASE_HEALTH, org_id, row[session_status]
                 )
                 if tag_value is None:
                     raise MetricIndexNotFound()
@@ -534,7 +534,7 @@ class BaseCrashRateMetricsEntitySubscription(BaseMetricsEntitySubscription):
                 Condition(
                     Column("metric_id"),
                     Op.EQ,
-                    resolve(UseCaseKey.RELEASE_HEALTH, self.org_id, self.metric_key.value),
+                    resolve(MetricPathKey.RELEASE_HEALTH, self.org_id, self.metric_key.value),
                 )
             ]
 

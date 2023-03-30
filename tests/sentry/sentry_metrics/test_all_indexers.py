@@ -10,7 +10,7 @@ from typing import Mapping, Set
 
 import pytest
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.base import FetchType, FetchTypeExt, Metadata
 from sentry.sentry_metrics.indexer.cache import CachingIndexer, StringIndexerCache
 from sentry.sentry_metrics.indexer.mock import RawSimpleIndexer
@@ -47,7 +47,7 @@ def indexer_cache():
     indexer_cache.cache.clear()
 
 
-use_case_id = UseCaseKey("release-health")
+use_case_id = MetricPathKey("release-health")
 
 
 def assert_fetch_type_for_tag_string_set(

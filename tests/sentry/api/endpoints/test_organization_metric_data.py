@@ -8,7 +8,7 @@ import pytest
 from freezegun import freeze_time
 
 from sentry.sentry_metrics import indexer
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.snuba.metrics.naming_layer.mri import ParsedMRI, SessionMRI, TransactionMRI
 from sentry.snuba.metrics.naming_layer.public import (
     SessionMetricKey,
@@ -23,12 +23,12 @@ from sentry.utils.cursors import Cursor
 from tests.sentry.api.endpoints.test_organization_metrics import MOCKED_DERIVED_METRICS
 
 
-def indexer_record(use_case_id: UseCaseKey, org_id: int, string: str) -> int:
+def indexer_record(use_case_id: MetricPathKey, org_id: int, string: str) -> int:
     return indexer.record(use_case_id=use_case_id, org_id=org_id, string=string)
 
 
-perf_indexer_record = partial(indexer_record, UseCaseKey.PERFORMANCE)
-rh_indexer_record = partial(indexer_record, UseCaseKey.RELEASE_HEALTH)
+perf_indexer_record = partial(indexer_record, MetricPathKey.PERFORMANCE)
+rh_indexer_record = partial(indexer_record, MetricPathKey.RELEASE_HEALTH)
 
 pytestmark = [pytest.mark.sentry_metrics]
 

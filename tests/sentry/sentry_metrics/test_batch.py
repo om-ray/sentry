@@ -8,7 +8,7 @@ from arroyo.backends.kafka import KafkaPayload
 from arroyo.processing.strategies.decoder.json import JsonCodec
 from arroyo.types import BrokerValue, Message, Partition, Topic, Value
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.consumers.indexer.batch import IndexerBatch, PartitionIdxOffset
 from sentry.sentry_metrics.indexer.base import FetchType, FetchTypeExt, Metadata
 from sentry.snuba.metrics.naming_layer.mri import SessionMRI
@@ -217,7 +217,7 @@ def test_extract_strings_with_rollout(should_index_tag_values, expected):
         ]
     )
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         should_index_tag_values,
         False,
@@ -238,7 +238,7 @@ def test_all_resolved(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         True,
         False,
@@ -375,7 +375,7 @@ def test_all_resolved_with_routing_information(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         True,
         True,
@@ -523,7 +523,7 @@ def test_all_resolved_retention_days_honored(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         True,
         False,
@@ -669,7 +669,7 @@ def test_batch_resolve_with_values_not_indexed(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         False,
         False,
@@ -791,7 +791,7 @@ def test_metric_id_rate_limited(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
+        MetricPathKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
     )
     assert batch.extract_strings() == (
         {
@@ -889,7 +889,7 @@ def test_tag_key_rate_limited(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
+        MetricPathKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
     )
     assert batch.extract_strings() == (
         {
@@ -969,7 +969,7 @@ def test_tag_value_rate_limited(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
+        MetricPathKey.PERFORMANCE, outer_message, True, False, arroyo_input_codec=_INGEST_SCHEMA
     )
     assert batch.extract_strings() == (
         {
@@ -1087,7 +1087,7 @@ def test_one_org_limited(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         True,
         False,
@@ -1206,7 +1206,7 @@ def test_cardinality_limiter(caplog, settings):
     )
 
     batch = IndexerBatch(
-        UseCaseKey.PERFORMANCE,
+        MetricPathKey.PERFORMANCE,
         outer_message,
         True,
         False,

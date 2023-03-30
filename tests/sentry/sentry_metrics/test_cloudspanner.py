@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from google.cloud import spanner
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.base import KeyResult, KeyResults
 from sentry.sentry_metrics.indexer.cloudspanner.cloudspanner import (
     CloudSpannerIndexer,
@@ -66,15 +66,15 @@ def test_spanner_indexer_implementation_basic(testing_indexer):
 
     record = {"org_id": 55555, "string": get_random_string(10)}
     testing_indexer.record(
-        use_case_id=UseCaseKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
+        use_case_id=MetricPathKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
     )
 
     with testing_indexer.database.snapshot() as snapshot:
         result = snapshot.read(
-            testing_indexer._get_table_name(UseCaseKey.PERFORMANCE),
+            testing_indexer._get_table_name(MetricPathKey.PERFORMANCE),
             columns=["id"],
             keyset=spanner.KeySet(keys=[[record["org_id"], record["string"]]]),
-            index=testing_indexer._get_unique_org_string_index_name(UseCaseKey.PERFORMANCE),
+            index=testing_indexer._get_unique_org_string_index_name(MetricPathKey.PERFORMANCE),
         )
 
     all_results = list(result)
@@ -83,13 +83,13 @@ def test_spanner_indexer_implementation_basic(testing_indexer):
     assert len(all_results) == 1
 
     indexer_resolved_id = testing_indexer.resolve(
-        use_case_id=UseCaseKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
+        use_case_id=MetricPathKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
     )
     assert indexer_resolved_id is not None
     assert indexer_resolved_id == decoded_id
 
     indexer_reverse_resolved_string = testing_indexer.reverse_resolve(
-        use_case_id=UseCaseKey.PERFORMANCE, id=encoded_id
+        use_case_id=MetricPathKey.PERFORMANCE, id=encoded_id
     )
     assert indexer_reverse_resolved_string is not None
     assert indexer_reverse_resolved_string == record["string"]
@@ -104,13 +104,13 @@ def test_spanner_indexer_implementation_bulk_insert_twice_gives_same_result(test
     """
     record = {"org_id": 55555, "string": get_random_string(10)}
     record1_int = testing_indexer.record(
-        use_case_id=UseCaseKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
+        use_case_id=MetricPathKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
     )
 
     # Insert the record again to validate that the returned id is the one we
     # got from the first insert.
     record2_int = testing_indexer.record(
-        use_case_id=UseCaseKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
+        use_case_id=MetricPathKey.PERFORMANCE, org_id=record["org_id"], string=record["string"]
     )
 
     assert record1_int == record2_int
@@ -140,7 +140,7 @@ def test_spanner_indexer_insert_batch_no_conflict_does_not_trigger_individual_in
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_db_records(UseCaseKey.PERFORMANCE, [model1], key_results1)
+    testing_indexer._insert_db_records(MetricPathKey.PERFORMANCE, [model1], key_results1)
 
     # Insert the same record with a different id but the key result would
     # have the id of model1.
@@ -155,7 +155,7 @@ def test_spanner_indexer_insert_batch_no_conflict_does_not_trigger_individual_in
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_db_records(UseCaseKey.PERFORMANCE, [model2], key_results2)
+    testing_indexer._insert_db_records(MetricPathKey.PERFORMANCE, [model2], key_results2)
     assert mock.call_count == 0, "Insert with collisions should not be called"
 
 
@@ -184,7 +184,7 @@ def test_spanner_indexer_insert_batch_conflict_triggers_individual_transactions(
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_db_records(UseCaseKey.PERFORMANCE, [model1], key_results1)
+    testing_indexer._insert_db_records(MetricPathKey.PERFORMANCE, [model1], key_results1)
 
     # Insert the same record with a different id but the key result would
     # have the id of model1.
@@ -199,7 +199,7 @@ def test_spanner_indexer_insert_batch_conflict_triggers_individual_transactions(
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_db_records(UseCaseKey.PERFORMANCE, [model2], key_results2)
+    testing_indexer._insert_db_records(MetricPathKey.PERFORMANCE, [model2], key_results2)
     assert mock.call_count == 1, "Insert with collisions should be called"
 
 
@@ -227,7 +227,7 @@ def test_spanner_indexer_individual_insert(testing_indexer):
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_collisions_handled(UseCaseKey.PERFORMANCE, [model1], key_results1)
+    testing_indexer._insert_collisions_handled(MetricPathKey.PERFORMANCE, [model1], key_results1)
     assert (
         key_results1.get_mapped_key_strings_to_ints()
         == expected_key_result.get_mapped_key_strings_to_ints()
@@ -246,7 +246,7 @@ def test_spanner_indexer_individual_insert(testing_indexer):
         last_seen=datetime.now(),
         retention_days=55,
     )
-    testing_indexer._insert_collisions_handled(UseCaseKey.PERFORMANCE, [model2], key_results2)
+    testing_indexer._insert_collisions_handled(MetricPathKey.PERFORMANCE, [model2], key_results2)
     assert (
         key_results2.get_mapped_key_strings_to_ints()
         == expected_key_result.get_mapped_key_strings_to_ints()

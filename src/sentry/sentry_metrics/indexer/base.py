@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
 )
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.utils.services import Service
 
 
@@ -207,7 +207,7 @@ class StringIndexer(Service):
     )
 
     def bulk_record(
-        self, use_case_id: UseCaseKey, org_strings: Mapping[int, Set[str]]
+        self, use_case_id: MetricPathKey, org_strings: Mapping[int, Set[str]]
     ) -> KeyResults:
         """
         Takes in a mapping with org_ids to sets of strings.
@@ -243,7 +243,7 @@ class StringIndexer(Service):
         """
         raise NotImplementedError()
 
-    def record(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def record(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Store a string and return the integer ID generated for it
 
         With every call to this method, the lifetime of the entry will be
@@ -251,7 +251,7 @@ class StringIndexer(Service):
         """
         raise NotImplementedError()
 
-    def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
+    def resolve(self, use_case_id: MetricPathKey, org_id: int, string: str) -> Optional[int]:
         """Lookup the integer ID for a string.
 
         Does not affect the lifetime of the entry.
@@ -263,7 +263,7 @@ class StringIndexer(Service):
         """
         raise NotImplementedError()
 
-    def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
+    def reverse_resolve(self, use_case_id: MetricPathKey, org_id: int, id: int) -> Optional[str]:
         """Lookup the stored string for a given integer ID.
 
         Callers should not rely on the default use_case_id -- it exists only

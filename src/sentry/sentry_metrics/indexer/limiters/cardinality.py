@@ -13,7 +13,7 @@ from sentry.ratelimits.cardinality import (
     RequestedQuota,
     Timestamp,
 )
-from sentry.sentry_metrics.configuration import MetricsIngestConfiguration, UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey, MetricsIngestConfiguration
 from sentry.sentry_metrics.consumers.indexer.batch import PartitionIdxOffset
 from sentry.utils import metrics
 from sentry.utils.hashlib import hash_values
@@ -25,7 +25,7 @@ OrgId = int
 @dataclasses.dataclass(frozen=True)
 class CardinalityLimiterState:
     _cardinality_limiter: CardinalityLimiter
-    _use_case_id: UseCaseKey
+    _use_case_id: MetricPathKey
     _grants: Optional[Sequence[GrantedQuota]]
     _timestamp: Optional[Timestamp]
     keys_to_remove: Sequence[PartitionIdxOffset]
@@ -39,16 +39,16 @@ def _build_quota_key(namespace: str, org_id: Optional[OrgId]) -> str:
 
 
 @metrics.wraps("sentry_metrics.indexer.construct_quotas")
-def _construct_quotas(use_case_id: UseCaseKey) -> Optional[Quota]:
+def _construct_quotas(use_case_id: MetricPathKey) -> Optional[Quota]:
     """
     Construct write limit's quotas based on current sentry options.
 
     This value can potentially cached globally as long as it is invalidated
     when sentry.options are.
     """
-    if use_case_id == UseCaseKey.PERFORMANCE:
+    if use_case_id == MetricPathKey.PERFORMANCE:
         quota_args = options.get("sentry-metrics.cardinality-limiter.limits.performance.per-org")
-    elif use_case_id == UseCaseKey.RELEASE_HEALTH:
+    elif use_case_id == MetricPathKey.RELEASE_HEALTH:
         quota_args = options.get("sentry-metrics.cardinality-limiter.limits.releasehealth.per-org")
     else:
         raise ValueError(use_case_id)
@@ -75,14 +75,14 @@ class TimeseriesCardinalityLimiter:
         self.backend: CardinalityLimiter = rate_limiter
 
     def check_cardinality_limits(
-        self, use_case_id: UseCaseKey, messages: Mapping[PartitionIdxOffset, InboundMessage]
+        self, use_case_id: MetricPathKey, messages: Mapping[PartitionIdxOffset, InboundMessage]
     ) -> CardinalityLimiterState:
         request_hashes = defaultdict(set)
         hash_to_offset = {}
 
-        if use_case_id == UseCaseKey.PERFORMANCE:
+        if use_case_id == MetricPathKey.PERFORMANCE:
             rollout_option = "sentry-metrics.cardinality-limiter.orgs-rollout-rate"
-        elif use_case_id == UseCaseKey.RELEASE_HEALTH:
+        elif use_case_id == MetricPathKey.RELEASE_HEALTH:
             rollout_option = "sentry-metrics.cardinality-limiter-rh.orgs-rollout-rate"
 
         for key, message in messages.items():

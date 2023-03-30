@@ -1,7 +1,7 @@
 import pytest
 from django.conf import settings
 
-from sentry.sentry_metrics.configuration import UseCaseKey
+from sentry.sentry_metrics.configuration import MetricPathKey
 from sentry.sentry_metrics.indexer.cache import StringIndexerCache
 from sentry.utils.cache import cache
 from sentry.utils.hashlib import md5_text
@@ -17,7 +17,7 @@ indexer_cache = StringIndexerCache(
 
 @pytest.fixture
 def use_case_id() -> str:
-    return UseCaseKey.RELEASE_HEALTH.value
+    return MetricPathKey.RELEASE_HEALTH.value
 
 
 def test_cache(use_case_id: str) -> None:
@@ -66,8 +66,8 @@ def test_ttl_jitter() -> None:
 
 
 def test_separate_namespacing() -> None:
-    indexer_cache.set("a", 1, UseCaseKey.RELEASE_HEALTH.value)
-    assert indexer_cache.get("a", UseCaseKey.RELEASE_HEALTH.value) == 1
-    indexer_cache.set("a", 2, UseCaseKey.PERFORMANCE.value)
-    assert indexer_cache.get("a", UseCaseKey.RELEASE_HEALTH.value) == 1
-    assert indexer_cache.get("a", UseCaseKey.PERFORMANCE.value) == 2
+    indexer_cache.set("a", 1, MetricPathKey.RELEASE_HEALTH.value)
+    assert indexer_cache.get("a", MetricPathKey.RELEASE_HEALTH.value) == 1
+    indexer_cache.set("a", 2, MetricPathKey.PERFORMANCE.value)
+    assert indexer_cache.get("a", MetricPathKey.RELEASE_HEALTH.value) == 1
+    assert indexer_cache.get("a", MetricPathKey.PERFORMANCE.value) == 2

@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -19,7 +18,7 @@ class HistoricGroupCounts(TestCase):  # type: ignore
 
     def _load_event_for_group(
         self,
-        project_id: Optional[int] = None,
+        project_id: int,
         minutes_ago: int = 1,
         fingerprint: str = "foo-1",
     ) -> Event:
@@ -27,11 +26,10 @@ class HistoricGroupCounts(TestCase):  # type: ignore
         Use fingerprint to create different groups.
         An event will be counted within an hour bucket depending on how many full 60 minutes it contains
         """
-        proj_id = project_id or self.project.id
         # This time becomes a starting point from which to create other datetimes in the past
         datetime_reset_zero = datetime.now().replace(minute=0, second=0, microsecond=0)
         return Factories.store_event(
-            project_id=proj_id,
+            project_id=project_id,
             data={
                 "event_id": uuid4().hex,
                 "message": "some message",
@@ -41,7 +39,7 @@ class HistoricGroupCounts(TestCase):  # type: ignore
         )
 
     def test_query_single_group(self) -> None:
-        event = self._load_event_for_group()
+        event = self._load_event_for_group(self.project.id)
         assert query_groups_past_counts(Group.objects.all()) == [
             {
                 "count()": 1,
@@ -52,16 +50,26 @@ class HistoricGroupCounts(TestCase):  # type: ignore
         ]
 
     def test_query_multiple_groups_same_project(self) -> None:
-        event1 = self._load_event_for_group(fingerprint="group-1", minutes_ago=1)
+        event1 = self._load_event_for_group(
+            project_id=self.project.id, fingerprint="group-1", minutes_ago=1
+        )
         # Increases the count of event1
-        self._load_event_for_group(fingerprint="group-1", minutes_ago=59)
+        self._load_event_for_group(
+            project_id=self.project.id, fingerprint="group-1", minutes_ago=59
+        )
         group_1_id = event1.group_id
         # one event in its own hour and two in another
-        event2 = self._load_event_for_group(fingerprint="group-2", minutes_ago=61)
+        event2 = self._load_event_for_group(
+            project_id=self.project.id, fingerprint="group-2", minutes_ago=61
+        )
         group_2_id = event2.group_id
-        event3 = self._load_event_for_group(fingerprint="group-2", minutes_ago=60)
+        event3 = self._load_event_for_group(
+            project_id=self.project.id, fingerprint="group-2", minutes_ago=60
+        )
         # Increases the count of event3
-        self._load_event_for_group(fingerprint="group-2", minutes_ago=59)
+        self._load_event_for_group(
+            project_id=self.project.id, fingerprint="group-2", minutes_ago=59
+        )
 
         # This forces to test the iteration over the Snuba data
         with patch("sentry.issues.escalating.QUERY_LIMIT", new=2):

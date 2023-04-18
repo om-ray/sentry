@@ -1,6 +1,7 @@
 import logging
 import random
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import (
     Any,
     Dict,
@@ -98,7 +99,6 @@ class IndexerBatch:
             partition_offset = PartitionIdxOffset(msg.value.partition.index, msg.value.offset)
             try:
                 parsed_payload = json.loads(msg.payload.value.decode("utf-8"), use_rapid_json=True)
-                self.parsed_payloads_by_offset[partition_offset] = parsed_payload
             except rapidjson.JSONDecodeError:
                 self.skipped_offsets.add(partition_offset)
                 logger.error(
@@ -107,7 +107,17 @@ class IndexerBatch:
                     exc_info=True,
                 )
                 continue
-
+            if (
+                datetime.fromtimestamp(parsed_payload["timestamp"], tz=timezone.utc)
+                - datetime.now(tz=timezone.utc)
+            ) > timedelta(days=5):
+                self.skipped_offsets.add(partition_offset)
+                logger.error(
+                    "process_messages.invalid_timestamp",
+                    extra={"payload_value": str(msg.payload.value)},
+                    exc_info=True,
+                )
+                continue
             try:
                 if self.__input_codec:
                     self.__input_codec.validate(parsed_payload)
@@ -119,6 +129,7 @@ class IndexerBatch:
                     extra={"payload_value": str(msg.payload.value)},
                     exc_info=True,
                 )
+            self.parsed_payloads_by_offset[partition_offset] = parsed_payload
 
     @metrics.wraps("process_messages.filter_messages")
     def filter_messages(self, keys_to_remove: Sequence[PartitionIdxOffset]) -> None:

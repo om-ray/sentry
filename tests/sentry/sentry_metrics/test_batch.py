@@ -1,6 +1,6 @@
 import logging
 from collections.abc import MutableMapping
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import sentry_kafka_schemas
@@ -362,6 +362,43 @@ def test_all_resolved(caplog, settings):
             [("mapping_sources", b"cd"), ("metric_type", "s")],
         ),
     ]
+
+
+def test_invalid_timestamp_dropped(caplog, settings):
+    settings.SENTRY_METRICS_INDEXER_DEBUG_LOG_SAMPLE_RATE = 1.0
+    invalid_timestamp_payload = counter_payload.copy()
+    invalid_timestamp_payload["timestamp"] = int((datetime.now() - timedelta(days=5)).timestamp())
+    outer_message = _construct_outer_message(
+        [
+            (counter_payload, []),
+            (invalid_timestamp_payload, []),
+            (distribution_payload, []),
+            (set_payload, []),
+        ]
+    )
+
+    batch = IndexerBatch(
+        UseCaseKey.PERFORMANCE,
+        outer_message,
+        True,
+        False,
+        arroyo_input_codec=_INGEST_SCHEMA,
+    )
+    assert batch.extract_strings() == (
+        {
+            1: {
+                "c:sessions/session@none",
+                "d:sessions/duration@second",
+                "environment",
+                "errored",
+                "healthy",
+                "init",
+                "production",
+                "s:sessions/error@none",
+                "session.status",
+            }
+        }
+    )
 
 
 def test_all_resolved_with_routing_information(caplog, settings):

@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 
 import {openIssueOwnershipRuleModal} from 'sentry/actionCreators/modal';
-import Access from 'sentry/components/acl/access';
 import ActorAvatar from 'sentry/components/avatar/actorAvatar';
 import {Button} from 'sentry/components/button';
 import ButtonBar from 'sentry/components/buttonBar';
@@ -14,6 +13,7 @@ import {useLegacyStore} from 'sentry/stores/useLegacyStore';
 import {space} from 'sentry/styles/space';
 import type {Actor, Event, Group, Organization, Project} from 'sentry/types';
 import {buildTeamId} from 'sentry/utils';
+import {useAccess} from 'sentry/utils/useAccess';
 
 interface OwnedByProps {
   group: Group;
@@ -24,6 +24,7 @@ interface OwnedByProps {
 
 function OwnedBy({group, project, organization, event}: OwnedByProps) {
   const memberList = useLegacyStore(MemberListStore);
+  const hasProjectWrite = useAccess({access: ['project:write']});
   const owner = group.owners?.find(({type}) =>
     ['codeowners', 'ownershipRule'].includes(type)
   );
@@ -69,7 +70,7 @@ function OwnedBy({group, project, organization, event}: OwnedByProps) {
         </TitleWrapper>
 
         <ButtonBar>
-          <Access access={['project:write']}>
+          {hasProjectWrite && (
             <Button
               onClick={() => {
                 openIssueOwnershipRuleModal({
@@ -84,7 +85,7 @@ function OwnedBy({group, project, organization, event}: OwnedByProps) {
               borderless
               size="xs"
             />
-          </Access>
+          )}
           <Button
             to={`/settings/${organization.slug}/projects/${project.slug}/ownership/`}
             aria-label={t('Issue Owners Settings')}

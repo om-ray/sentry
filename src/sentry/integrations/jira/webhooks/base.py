@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
+from sentry_sdk import Scope
 
 from sentry.api.base import Endpoint
 from sentry.integrations.utils import AtlassianConnectValidationError
@@ -19,7 +20,11 @@ class JiraTokenError(Exception):
     pass
 
 
-class JiraEndpointBase(Endpoint, abc.ABC):
+class JiraWebhookBase(Endpoint, abc.ABC):
+    """
+    Base class for webhooks used in the Jira integration
+    """
+
     authentication_classes = ()
     permission_classes = ()
     provider = "jira"
@@ -29,14 +34,18 @@ class JiraEndpointBase(Endpoint, abc.ABC):
         return super().dispatch(request, *args, **kwargs)
 
     def handle_exception(
-        self, request: Request, exc: Exception, handler_context: Mapping[str, Any] | None = None
+        self,
+        request: Request,
+        exc: Exception,
+        handler_context: Mapping[str, Any] | None = None,
+        scope: Scope | None = None,
     ) -> Response:
         if isinstance(exc, (AtlassianConnectValidationError, JiraTokenError)):
             return self.respond(status=status.HTTP_400_BAD_REQUEST)
         # Perhaps it makes sense to do this in the base class, however, I'm concerned
         # it would create too many errors at once and may be grouped together
         logger.exception("Unclear JIRA exception.")
-        return super().handle_exception(request, exc, handler_context)
+        return super().handle_exception(request, exc, handler_context, scope)
 
     def get_token(self, request: Request) -> str:
         try:

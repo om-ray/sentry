@@ -15,7 +15,8 @@ import {MutableSearch} from 'sentry/utils/tokenizeSearch';
 import withOrganization from 'sentry/utils/withOrganization';
 
 import DatabaseChartView from './databaseChartView';
-import DatabaseTableView from './databaseTableView';
+import DatabaseTableView, {DataRow} from './databaseTableView';
+import QueryDetail from './panel';
 
 type Props = {
   location: Location;
@@ -26,6 +27,7 @@ function getOptions() {
   const prefix = <span>{t('Operation')}</span>;
 
   return [
+    'ALL',
     'DELETE',
     'INSERT',
     'ROLLBACK',
@@ -34,28 +36,64 @@ function getOptions() {
     'UPDATE',
     'connect',
     'delete',
-  ].map(operation => {
+  ].map(action => {
     return {
-      value: operation,
+      value: action,
       prefix,
-      label: operation,
+      label: action,
+    };
+  });
+}
+
+function getTableOptions() {
+  const prefix = <span>{t('Table')}</span>;
+
+  return [
+    'ALL',
+    'auth_user',
+    'sentry_useroption',
+    'sentry_organizationmember',
+    'sentry_organization',
+    'sentry_project',
+    'sentry_useremail',
+    'sentry_auditlogentry',
+    'accounts_charge',
+    'sentry_organizationmember_teams',
+    'sentry_team',
+    'sentry_useravatar',
+    'sentry_groupmeta',
+    'sentry_release_project',
+    'auth_authenticator',
+    'policy_policy',
+    'sentry_grouplink',
+  ].map(action => {
+    return {
+      value: action,
+      prefix,
+      label: action,
     };
   });
 }
 
 type State = {
-  operation: string;
+  action: string;
+  table: string;
   transaction: string;
+  selectedRow?: DataRow;
 };
 
 class DatabaseModule extends Component<Props, State> {
   state: State = {
-    operation: 'SELECT',
+    action: 'ALL',
     transaction: '',
+    table: 'ALL',
   };
 
   handleOptionChange(value) {
-    this.setState({operation: value});
+    this.setState({action: value});
+  }
+  handleTableChange(value) {
+    this.setState({table: value});
   }
 
   handleSearch(query) {
@@ -74,8 +112,10 @@ class DatabaseModule extends Component<Props, State> {
 
   render() {
     const {location, organization} = this.props;
-    const {operation, transaction} = this.state;
+    const {table, action, transaction} = this.state;
     const eventView = EventView.fromLocation(location);
+    const setSelectedRow = (row: DataRow) => this.setState({selectedRow: row});
+    const unsetSelectedSpanGroup = () => this.setState({selectedRow: undefined});
 
     return (
       <Layout.Page>
@@ -91,9 +131,14 @@ class DatabaseModule extends Component<Props, State> {
               <PageErrorAlert />
               <DatabaseChartView location={location} />
               <CompactSelect
-                value={operation}
+                value={action}
                 options={getOptions()}
                 onChange={opt => this.handleOptionChange(opt.value)}
+              />
+              <CompactSelect
+                value={table}
+                options={getTableOptions()}
+                onChange={opt => this.handleTableChange(opt.value)}
               />
               <TransactionNameSearchBar
                 organization={organization}
@@ -103,8 +148,14 @@ class DatabaseModule extends Component<Props, State> {
               />
               <DatabaseTableView
                 location={location}
-                operation={operation}
+                action={action !== 'ALL' ? action : undefined}
+                table={table !== 'ALL' ? table : undefined}
                 transaction={transaction}
+                onSelect={setSelectedRow}
+              />
+              <QueryDetail
+                row={this.state.selectedRow}
+                onClose={unsetSelectedSpanGroup}
               />
             </Layout.Main>
           </Layout.Body>

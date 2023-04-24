@@ -2,8 +2,10 @@ import {Fragment} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Location} from 'history';
 
+import {t} from 'sentry/locale';
 import {Series} from 'sentry/types/echarts';
 import Chart from 'sentry/views/starfish/components/chart';
+import ChartPanel from 'sentry/views/starfish/components/chartPanel';
 
 const HOST = 'http://localhost:8080';
 
@@ -13,15 +15,15 @@ type Props = {
 
 export default function APIModuleView({}: Props) {
   const GRAPH_QUERY = `
-  select operation,
+  select action,
        count() as count,
        toStartOfInterval(start_timestamp, INTERVAL 1 DAY) as interval
   from default.spans_experimental_starfish
   where startsWith(span_operation, 'db')
     and span_operation != 'db.redis'
  group by interval,
-          operation
-  order by interval, operation
+          action
+  order by interval, action
   `;
   const TOP_QUERY = `
   select quantile(0.5)(exclusive_time) as p50, description,
@@ -55,80 +57,86 @@ export default function APIModuleView({}: Props) {
     initialData: [],
   });
 
-  const seriesByOperation: {[operation: string]: Series} = {};
+  const seriesByAction: {[action: string]: Series} = {};
   graphData.forEach(datum => {
-    seriesByOperation[datum.operation] = {
-      seriesName: datum.operation,
+    seriesByAction[datum.action] = {
+      seriesName: datum.action,
       data: [],
     };
   });
 
   graphData.forEach(datum => {
-    seriesByOperation[datum.operation].data.push({
+    seriesByAction[datum.action].data.push({
       value: datum.count,
       name: datum.interval,
     });
   });
 
-  const data = Object.values(seriesByOperation);
+  const data = Object.values(seriesByAction);
 
-  const seriesByQuery: {[operation: string]: Series} = {};
-  topGraphData.forEach(datum => {
-    seriesByQuery[datum.description] = {
-      seriesName: datum.description.substring(0, 50),
-      data: [],
-    };
-  });
-
-  topGraphData.forEach(datum => {
-    seriesByQuery[datum.description].data.push({
-      value: datum.p50,
-      name: datum.interval,
+  const seriesByQuery: {[action: string]: Series} = {};
+  if (!isTopGraphLoading) {
+    topGraphData.forEach(datum => {
+      seriesByQuery[datum.description] = {
+        seriesName: datum.description.substring(0, 50),
+        data: [],
+      };
     });
-  });
+
+    topGraphData.forEach(datum => {
+      seriesByQuery[datum.description].data.push({
+        value: datum.p50,
+        name: datum.interval,
+      });
+    });
+  }
 
   const topData = Object.values(seriesByQuery);
 
   return (
     <Fragment>
-      Slowest Queries
-      <Chart
-        statsPeriod="24h"
-        height={180}
-        data={topData}
-        start=""
-        end=""
-        loading={isTopGraphLoading}
-        utc={false}
-        grid={{
-          left: '0',
-          right: '0',
-          top: '16px',
-          bottom: '8px',
-        }}
-        disableMultiAxis
-        definedAxisTicks={4}
-        isLineChart
-      />
-      Throughput
-      <Chart
-        statsPeriod="24h"
-        height={180}
-        data={data}
-        start=""
-        end=""
-        loading={isGraphLoading}
-        utc={false}
-        grid={{
-          left: '0',
-          right: '0',
-          top: '16px',
-          bottom: '8px',
-        }}
-        disableMultiAxis
-        definedAxisTicks={4}
-        isLineChart
-      />
+      <ChartPanel title={t('Slowest Queries')}>
+        <Chart
+          statsPeriod="24h"
+          height={180}
+          data={topData}
+          start=""
+          end=""
+          loading={isTopGraphLoading}
+          utc={false}
+          grid={{
+            left: '0',
+            right: '0',
+            top: '16px',
+            bottom: '8px',
+          }}
+          disableMultiAxis
+          definedAxisTicks={4}
+          isLineChart
+          showLegend
+        />
+      </ChartPanel>
+      <ChartPanel title={t('Throughput')}>
+        <Chart
+          statsPeriod="24h"
+          height={180}
+          data={data}
+          start=""
+          end=""
+          loading={isGraphLoading}
+          utc={false}
+          grid={{
+            left: '0',
+            right: '0',
+            top: '16px',
+            bottom: '8px',
+          }}
+          disableMultiAxis
+          definedAxisTicks={4}
+          isLineChart
+          showLegend
+        />
+      </ChartPanel>
     </Fragment>
   );
 }

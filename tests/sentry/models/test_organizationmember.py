@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from sentry import roles
 from sentry.auth import manager
+from sentry.db.postgres.roles import set_test_psql_role_override
 from sentry.exceptions import UnableToAcceptMemberInvitationException
 from sentry.models import (
     INVITE_DAYS_VALID,
@@ -25,6 +26,12 @@ from sentry.testutils.silo import exempt_from_silo_limits, region_silo_test
 
 @region_silo_test(stable=True)
 class OrganizationMemberTest(TestCase):
+    def setup_method(self, method):
+        self.restore = set_test_psql_role_override("postgres")
+
+    def teardown_method(self, method):
+        self.restore()
+
     def test_legacy_token_generation(self):
         member = OrganizationMember(id=1, organization_id=1, email="foo@example.com")
         with self.settings(SECRET_KEY="a"):

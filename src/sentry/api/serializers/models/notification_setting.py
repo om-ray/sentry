@@ -38,7 +38,7 @@ class NotificationSettingsSerializer(Serializer):  # type: ignore
 
         notifications_settings = NotificationSetting.objects._filter(
             type=type_option,
-            target_ids=actor_mapping.keys(),
+            target_ids=actor_mapping.keys(),  # TODO:notification
         )
 
         results: MutableMapping[Union["Team", "User"], MutableMapping[str, Set[Any]]] = defaultdict(

@@ -169,15 +169,14 @@ def get_participants_for_release(
 ) -> ParticipantMap:
     # Collect all users with verified emails on a team in the related projects.
     users = {
-        RpcActor.from_orm_user(user)
-        for user in User.objects.get_team_members_with_verified_email_for_projects(projects)
+        user for user in User.objects.get_team_members_with_verified_email_for_projects(projects)
     }
 
     # Get all the involved users' settings for deploy-emails (including
     # users' organization-independent settings.)
     notification_settings = NotificationSetting.objects.get_for_recipient_by_parent(
         NotificationSettingTypes.DEPLOY,
-        recipients=users,
+        user_ids=[user.id for user in users],
         parent=organization,
     )
     notification_settings_by_recipient = transform_to_notification_settings_by_recipient(

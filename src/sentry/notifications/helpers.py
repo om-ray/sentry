@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping, Optional, Union
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -20,6 +20,8 @@ from sentry.notifications.types import (
 from sentry.services.hybrid_cloud import extract_id_from
 from sentry.services.hybrid_cloud.actor import ActorType, RpcActor
 from sentry.services.hybrid_cloud.notifications import RpcNotificationSetting
+from sentry.services.hybrid_cloud.organization import RpcTeam
+from sentry.services.hybrid_cloud.user import RpcUser
 from sentry.types.integrations import (
     EXTERNAL_PROVIDERS,
     ExternalProviders,
@@ -183,7 +185,9 @@ def get_values_by_provider_by_type(
 
 def transform_to_notification_settings_by_recipient(
     notification_settings: Iterable[RpcNotificationSetting],
-    recipients: Iterable[RpcActor],
+    recipients: Optional[Iterable[RpcActor]],
+    teams: Optional[Iterable[Union[Team, RpcTeam]]] = None,
+    users: Optional[Iterable[Union[User, RpcUser]]] = None,
 ) -> Mapping[
     RpcActor,
     Mapping[NotificationScopeType, Mapping[ExternalProviders, NotificationSettingOptionValues]],
@@ -268,9 +272,8 @@ def get_scope_type(type: NotificationSettingTypes) -> NotificationScopeType:
 
 
 def get_scope(
-    user: User | None = None,
-    team: Team | None = None,
-    actor: RpcActor | None = None,
+    user: RpcUser | User | None = None,
+    team: RpcTeam | Team | None = None,
     project: Project | int | None = None,
     organization: Organization | int | None = None,
 ) -> tuple[NotificationScopeType, int]:
@@ -285,14 +288,10 @@ def get_scope(
         return NotificationScopeType.ORGANIZATION, extract_id_from(organization)
 
     if user is not None:
-        actor = RpcActor.from_object(user)
+        return NotificationScopeType.USER, user.id
+
     if team is not None:
-        actor = RpcActor.from_object(team)
-    if actor:
-        if actor.actor_type == ActorType.TEAM:
-            return NotificationScopeType.TEAM, extract_id_from(actor)
-        else:
-            return NotificationScopeType.USER, extract_id_from(actor)
+        return NotificationScopeType.TEAM, team.id
 
     raise Exception("scope must be either user, team, organization, or project")
 

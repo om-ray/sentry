@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Any, Iterable, Mapping, Union
+from typing import Any, Iterable, Mapping, Optional, Union
 
 from sentry.models import User
 from sentry.notifications.types import (
@@ -166,7 +166,7 @@ def get_key_value_from_legacy(
 
 def get_legacy_object(
     notification_setting: Any,
-    user_mapping: Mapping[int, Union[User, RpcUser]] = None,
+    user_mapping: Optional[Mapping[int, Union[User, RpcUser]]] = None,
 ) -> Any:
     type = NotificationSettingTypes(notification_setting.type)
     value = NotificationSettingOptionValues(notification_setting.value)
@@ -176,7 +176,7 @@ def get_legacy_object(
     data = {
         "key": key,
         "value": get_legacy_value(type, value),
-        "user": user_mapping.get(notification_setting.user_id),
+        "user": user_mapping.get(notification_setting.user_id) if user_mapping else None,
         "project_id": None,
         "organization_id": None,
     }

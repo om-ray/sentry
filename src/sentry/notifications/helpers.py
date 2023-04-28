@@ -37,7 +37,8 @@ if TYPE_CHECKING:
 def _get_notification_setting_default(
     provider: ExternalProviders,
     type: NotificationSettingTypes,
-    recipient: RpcActor | None = None,  # not needed right now
+    team: Team | RpcTeam | None = None,
+    user: User | RpcUser | None = None,
 ) -> NotificationSettingOptionValues:
     """
     In order to increase engagement, we automatically opt users into receiving
@@ -46,7 +47,7 @@ def _get_notification_setting_default(
     """
 
     # every team default is off
-    if recipient is not None and recipient.actor_type == ActorType.TEAM:
+    if team is not None:
         return NotificationSettingOptionValues.NEVER
     return NOTIFICATION_SETTING_DEFAULTS[provider][type]
 
@@ -157,7 +158,7 @@ def get_values_by_provider_by_type(
     ],
     all_providers: Iterable[ExternalProviders],
     type: NotificationSettingTypes,
-    recipient: RpcActor | None = None,
+    user: User | RpcUser | None = None,
 ) -> Mapping[ExternalProviders, NotificationSettingOptionValues]:
     """
     Given a mapping of scopes to a mapping of default and specific notification
@@ -177,7 +178,7 @@ def get_values_by_provider_by_type(
         provider: (
             parent_specific_mapping.get(provider)
             or organization_independent_mapping.get(provider)
-            or _get_notification_setting_default(provider, type, recipient)
+            or _get_notification_setting_default(provider, type, user)
         )
         for provider in all_providers
     }

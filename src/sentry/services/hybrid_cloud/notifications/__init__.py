@@ -4,7 +4,7 @@
 # defined, because we want to reflect on type annotations and avoid forward references.
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, cast
+from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union, cast
 
 from sentry.notifications.types import (
     NotificationScopeType,
@@ -13,13 +13,14 @@ from sentry.notifications.types import (
 )
 from sentry.services.hybrid_cloud import RpcModel
 from sentry.services.hybrid_cloud.actor import RpcActor
+from sentry.services.hybrid_cloud.organization import RpcTeam
 from sentry.services.hybrid_cloud.rpc import RpcService, rpc_method
 from sentry.services.hybrid_cloud.user import RpcUser
 from sentry.silo import SiloMode
 from sentry.types.integrations import ExternalProviders
 
 if TYPE_CHECKING:
-    from sentry.models import NotificationSetting
+    from sentry.models import NotificationSetting, Team, User
 
 
 class RpcNotificationSetting(RpcModel):
@@ -93,7 +94,8 @@ class NotificationsService(RpcService):
         external_provider: ExternalProviders,
         notification_type: NotificationSettingTypes,
         setting_option: NotificationSettingOptionValues,
-        actor: RpcActor,
+        team: Optional[Union["RpcTeam", "Team"]] = None,
+        user: Optional[Union["RpcUser", "User"]] = None,
         project_id: Optional[int] = None,
         organization_id: Optional[int] = None,
     ) -> None:

@@ -138,7 +138,6 @@ from sentry.utils.retries import TimedRetryPolicy
 from sentry.utils.samples import load_data
 from sentry.utils.snuba import _snuba_pool
 
-from ..services.hybrid_cloud.actor import RpcActor
 from ..snuba.metrics import (
     MetricConditionField,
     MetricField,
@@ -2157,19 +2156,19 @@ class MSTeamsActivityNotificationTest(ActivityTestCase):
             ExternalProviders.MSTEAMS,
             NotificationSettingTypes.WORKFLOW,
             NotificationSettingOptionValues.ALWAYS,
-            actor=RpcActor.from_orm_user(self.user),
+            user=self.user,
         )
         NotificationSetting.objects.update_settings(
             ExternalProviders.MSTEAMS,
             NotificationSettingTypes.ISSUE_ALERTS,
             NotificationSettingOptionValues.ALWAYS,
-            actor=RpcActor.from_orm_user(self.user),
+            user=self.user,
         )
         NotificationSetting.objects.update_settings(
             ExternalProviders.MSTEAMS,
             NotificationSettingTypes.DEPLOY,
             NotificationSettingOptionValues.ALWAYS,
-            actor=RpcActor.from_orm_user(self.user),
+            user=self.user,
         )
         UserOption.objects.create(user=self.user, key="self_notifications", value="1")
 

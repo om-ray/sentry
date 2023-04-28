@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Mapping, Optional, Sequence
+from typing import List, Mapping, Optional, Sequence, Union
 
 from django.db import transaction
 from django.db.models import Q
 
-from sentry.models import NotificationSetting, User
+from sentry.models import NotificationSetting, Team, User
 from sentry.notifications.helpers import get_scope_type
 from sentry.notifications.types import (
     NotificationScopeType,
@@ -14,6 +14,7 @@ from sentry.notifications.types import (
 )
 from sentry.services.hybrid_cloud.actor import ActorType, RpcActor
 from sentry.services.hybrid_cloud.notifications import NotificationsService, RpcNotificationSetting
+from sentry.services.hybrid_cloud.organization import RpcTeam
 from sentry.services.hybrid_cloud.user import RpcUser
 from sentry.types.integrations import ExternalProviders
 
@@ -36,7 +37,8 @@ class DatabaseBackedNotificationsService(NotificationsService):
         external_provider: ExternalProviders,
         notification_type: NotificationSettingTypes,
         setting_option: NotificationSettingOptionValues,
-        actor: RpcActor,
+        team: Optional[Union[RpcTeam, Team]] = None,
+        user: Optional[Union[RpcUser, User]] = None,
         project_id: Optional[int] = None,
         organization_id: Optional[int] = None,
     ) -> None:
@@ -44,7 +46,8 @@ class DatabaseBackedNotificationsService(NotificationsService):
             provider=external_provider,
             type=notification_type,
             value=setting_option,
-            actor=actor,
+            team=team,
+            user=user,
             project=project_id,
             organization=organization_id,
         )

@@ -3,7 +3,6 @@ from typing import Iterable
 
 from sentry.api.serializers import Serializer
 from sentry.models import NotificationSetting, UserOption
-from sentry.models.actor import Actor
 from sentry.notifications.types import FineTuningAPIKey, NotificationScopeType
 from sentry.notifications.utils.legacy_mappings import (
     get_type_from_fine_tuning_key,
@@ -37,7 +36,7 @@ class UserNotificationsSerializer(Serializer):
             notifications_settings = NotificationSetting.objects._filter(
                 ExternalProviders.EMAIL,
                 get_type_from_fine_tuning_key(notification_type),
-                user_ids=user_mapping.keys(),
+                user_ids=list(user_mapping.keys()),
             ).exclude(scope_type=NotificationScopeType.USER.value)
             data = map_notification_settings_to_legacy(notifications_settings, user_mapping)
 

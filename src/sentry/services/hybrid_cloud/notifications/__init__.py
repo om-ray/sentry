@@ -94,6 +94,7 @@ class NotificationsService(RpcService):
         external_provider: ExternalProviders,
         notification_type: NotificationSettingTypes,
         setting_option: NotificationSettingOptionValues,
+        actor: RpcActor,
         team: Optional[Union["RpcTeam", "Team"]] = None,
         user: Optional[Union["RpcUser", "User"]] = None,
         project_id: Optional[int] = None,
@@ -111,6 +112,8 @@ class NotificationsService(RpcService):
         ],
         external_provider: ExternalProviders,
         actor: RpcActor,
+        team: Optional[Union["RpcTeam", "Team"]] = None,
+        user: Optional[Union["RpcUser", "User"]] = None,
     ) -> None:
         pass
 

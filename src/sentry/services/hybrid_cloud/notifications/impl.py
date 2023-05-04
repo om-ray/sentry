@@ -37,6 +37,7 @@ class DatabaseBackedNotificationsService(NotificationsService):
         external_provider: ExternalProviders,
         notification_type: NotificationSettingTypes,
         setting_option: NotificationSettingOptionValues,
+        actor: RpcActor,
         team: Optional[Union[RpcTeam, Team]] = None,
         user: Optional[Union[RpcUser, User]] = None,
         project_id: Optional[int] = None,
@@ -48,6 +49,7 @@ class DatabaseBackedNotificationsService(NotificationsService):
             value=setting_option,
             team=team,
             user=user,
+            actor=actor,
             project=project_id,
             organization=organization_id,
         )
@@ -60,12 +62,16 @@ class DatabaseBackedNotificationsService(NotificationsService):
         ],
         external_provider: ExternalProviders,
         actor: RpcActor,
+        team: Optional[Union[RpcTeam, Team]] = None,
+        user: Optional[Union[RpcUser, User]] = None,
     ) -> None:
         with transaction.atomic():
             for notification_type, setting_option in notification_type_to_value_map.items():
                 self.update_settings(
                     external_provider=external_provider,
                     actor=actor,
+                    team=team,
+                    user=user,
                     notification_type=notification_type,
                     setting_option=setting_option,
                 )

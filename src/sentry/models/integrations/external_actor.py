@@ -10,7 +10,10 @@ from sentry.db.models import (
     region_silo_only_model,
 )
 from sentry.db.models.fields.hybrid_cloud_foreign_key import HybridCloudForeignKey
+from sentry.models import Team, User
 from sentry.services.hybrid_cloud.notifications import notifications_service
+from sentry.services.hybrid_cloud.organization import RpcTeam
+from sentry.services.hybrid_cloud.user import RpcUser
 from sentry.types.integrations import ExternalProviders
 
 logger = logging.getLogger(__name__)
@@ -52,10 +55,12 @@ class ExternalActor(DefaultFieldsModel):
             integration=integration, organization_id=self.organization.id
         )
 
-        team = self.actor.resolve()
-        install.notify_remove_external_team(external_team=self, team=team)
+        actor = self.actor.resolve()
+        install.notify_remove_external_team(external_team=self, team=actor)
+        team_id = actor.id if isinstance(actor, (Team, RpcTeam)) else None
+        user_id = actor.id if isinstance(actor, (User, RpcUser)) else None
         notifications_service.remove_notification_settings(
-            team_id=team.id, provider=ExternalProviders(self.provider)
+            team_id=team_id, user_id=user_id, provider=ExternalProviders(self.provider)
         )
 
         return super().delete(**kwargs)

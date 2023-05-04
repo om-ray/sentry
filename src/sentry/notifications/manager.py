@@ -267,14 +267,15 @@ class NotificationsManager(BaseManager["NotificationSetting"]):
         organization: Organization | int | None = None,
     ) -> QuerySet:
         """Wrapper for .filter that translates object parameters to scopes and targets."""
-        # assert
+        assert team or user, "Either team or user must be provided to find_settings"
+        assert not (team and user), "Cannot provide both team and user to find_settings"
+
         team_ids = [team.id] if team is not None else []
         user_ids = [user.id] if user is not None else []
 
         scope_type, scope_identifier = get_scope(
             team=team, user=user, project=project, organization=organization
         )
-        assert team or user, "Cannot find settings for None actor_id"
         return self._filter(
             provider, type, scope_type, scope_identifier, team_ids=team_ids, user_ids=user_ids
         )

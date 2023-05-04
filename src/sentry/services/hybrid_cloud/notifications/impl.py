@@ -143,12 +143,18 @@ class DatabaseBackedNotificationsService(NotificationsService):
             )
         ]
 
-    def remove_notification_settings(self, *, team_id: int, provider: ExternalProviders) -> None:
+    def remove_notification_settings(
+        self, *, team_id: Optional[int], user_id: Optional[int], provider: ExternalProviders
+    ) -> None:
         """
         Delete notification settings based on an actor_id
         There is no foreign key relationship so we have to manually cascade.
         """
-        NotificationSetting.objects._filter(team_ids=[team_id], provider=provider).delete()
+        team_ids = [team_id] if team_id else None
+        user_ids = [user_id] if user_id else None
+        NotificationSetting.objects._filter(
+            team_ids=team_ids, user_ids=user_ids, provider=provider
+        ).delete()
 
     def close(self) -> None:
         pass

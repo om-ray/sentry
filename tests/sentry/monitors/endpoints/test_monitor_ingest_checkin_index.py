@@ -77,7 +77,9 @@ class CreateMonitorCheckInTest(MonitorIngestTestCase):
 
             checkin = MonitorCheckIn.objects.get(guid=resp.data["id"])
             assert checkin.status == CheckInStatus.OK
-            assert checkin.expected_time == monitor.date_added - timedelta(minutes=1)
+            assert checkin.config_data["expected_time"] == (
+                monitor.date_added - timedelta(minutes=1)
+            ).isoformat().replace("+00:00", "Z")
 
             monitor_environment = MonitorEnvironment.objects.get(id=checkin.monitor_environment.id)
             assert monitor_environment.status == MonitorStatus.OK

@@ -124,7 +124,7 @@ class MonitorCheckInSerializer(Serializer):
             "duration": obj.duration,
             "dateCreated": obj.date_added,
             "attachmentId": obj.attachment_id,
-            "expectedTime": obj.expected_time,
+            "configData": obj.config_data or {},
         }
 
 
@@ -135,4 +135,4 @@ class MonitorCheckInSerializerResponse(TypedDict):
     duration: int
     dateCreated: datetime
     attachmentId: str
-    expectedTime: datetime
+    configData: Any

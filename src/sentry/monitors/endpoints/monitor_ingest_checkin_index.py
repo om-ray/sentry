@@ -189,7 +189,7 @@ class MonitorIngestCheckInIndexEndpoint(MonitorIngestEndpoint):
                 monitor_environment=monitor_environment,
                 duration=result.get("duration"),
                 status=getattr(CheckInStatus, result["status"].upper()),
-                expected_time=monitor_environment.next_checkin,
+                config_data={"expected_time": monitor_environment.next_checkin},
             )
 
             signal_first_checkin(project, monitor)

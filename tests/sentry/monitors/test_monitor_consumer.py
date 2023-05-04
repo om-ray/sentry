@@ -97,7 +97,9 @@ class MonitorConsumerTest(TestCase):
 
         checkin = MonitorCheckIn.objects.get(guid=self.message_guid)
         assert checkin.status == CheckInStatus.OK
-        assert checkin.expected_time == expected_next_checkin
+        assert checkin.config_data["expected_time"] == expected_next_checkin.isoformat().replace(
+            "+00:00", "Z"
+        )
 
         monitor_environment = MonitorEnvironment.objects.get(id=checkin.monitor_environment.id)
         assert monitor_environment.status == MonitorStatus.OK
@@ -115,7 +117,9 @@ class MonitorConsumerTest(TestCase):
 
         checkin = MonitorCheckIn.objects.get(guid=self.guid)
         assert checkin.status == CheckInStatus.OK
-        assert checkin.expected_time == expected_next_checkin
+        assert checkin.config_data["expected_time"] == expected_next_checkin.isoformat().replace(
+            "+00:00", "Z"
+        )
 
         monitor_environment = MonitorEnvironment.objects.get(id=checkin.monitor_environment.id)
         assert monitor_environment.status == MonitorStatus.OK

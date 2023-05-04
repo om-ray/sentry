@@ -32,6 +32,7 @@ class CheckMonitorsTest(TestCase):
             next_checkin=timezone.now() - timedelta(minutes=1),
             status=MonitorStatus.OK,
         )
+        expected_next_checkin = monitor_environment.next_checkin
 
         check_monitors()
 
@@ -41,6 +42,9 @@ class CheckMonitorsTest(TestCase):
         assert MonitorCheckIn.objects.filter(
             monitor_environment=monitor_environment.id, status=CheckInStatus.MISSED
         ).exists()
+        assert MonitorCheckIn.objects.get(
+            monitor_environment=monitor_environment.id, status=CheckInStatus.MISSED
+        ).config_data["expected_time"] == expected_next_checkin.isoformat().replace("+00:00", "Z")
 
     def test_missing_checkin_but_disabled(self):
         org = self.create_organization()

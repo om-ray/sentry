@@ -68,6 +68,7 @@ def check_monitors(current_datetime=None):
             monitor=monitor_environment.monitor,
             monitor_environment=monitor_environment,
             status=CheckInStatus.MISSED,
+            config_data={"expected_time": monitor_environment.next_checkin},
         )
         monitor_environment.mark_failed(reason=MonitorFailure.MISSED_CHECKIN)
 

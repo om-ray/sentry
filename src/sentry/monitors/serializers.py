@@ -124,7 +124,7 @@ class MonitorCheckInSerializer(Serializer):
             "duration": obj.duration,
             "dateCreated": obj.date_added,
             "attachmentId": obj.attachment_id,
-            "expectedTime": obj.expected__time,
+            "expectedTime": obj.expected_time,
         }
 
 

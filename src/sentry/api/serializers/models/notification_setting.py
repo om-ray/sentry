@@ -56,7 +56,7 @@ class NotificationSettingsSerializer(Serializer):  # type: ignore
         for notifications_setting in notifications_settings:
             target = (
                 user_map.get(notifications_setting.user_id)
-                if notifications_setting.user_if
+                if notifications_setting.user_id
                 else team_map.get(notifications_setting.team_id)
                 if notifications_setting.team_id
                 else None

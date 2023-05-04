@@ -284,6 +284,7 @@ class MonitorCheckIn(Model):
     date_added = models.DateTimeField(default=timezone.now)
     date_updated = models.DateTimeField(default=timezone.now)
     attachment_id = BoundedBigIntegerField(null=True)
+    expected_time = models.DateTimeField(null=True)
 
     objects = BaseManager(cache_fields=("guid",))
 

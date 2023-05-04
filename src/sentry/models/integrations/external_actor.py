@@ -10,7 +10,8 @@ from sentry.db.models import (
     region_silo_only_model,
 )
 from sentry.db.models.fields.hybrid_cloud_foreign_key import HybridCloudForeignKey
-from sentry.models import Team, User
+from sentry.models.team import Team
+from sentry.models.user import User
 from sentry.services.hybrid_cloud.notifications import notifications_service
 from sentry.services.hybrid_cloud.organization import RpcTeam
 from sentry.services.hybrid_cloud.user import RpcUser

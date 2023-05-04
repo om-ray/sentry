@@ -91,11 +91,13 @@ class MonitorConsumerTest(TestCase):
 
     def test_payload(self) -> None:
         monitor = self._create_monitor(slug="my-monitor")
+        expected_next_checkin = monitor.next_checkin
 
         self.send_message(self.get_valid_wrapper(monitor.slug))
 
         checkin = MonitorCheckIn.objects.get(guid=self.message_guid)
         assert checkin.status == CheckInStatus.OK
+        assert checkin.expected_time == expected_next_checkin
 
         monitor_environment = MonitorEnvironment.objects.get(id=checkin.monitor_environment.id)
         assert monitor_environment.status == MonitorStatus.OK
@@ -107,11 +109,13 @@ class MonitorConsumerTest(TestCase):
     @pytest.mark.django_db
     def test_passing(self) -> None:
         monitor = self._create_monitor(slug="my-monitor")
+        expected_next_checkin = monitor.next_checkin
         message = self.get_message(monitor.slug)
         _process_message(message)
 
         checkin = MonitorCheckIn.objects.get(guid=self.guid)
         assert checkin.status == CheckInStatus.OK
+        assert checkin.expected_time == expected_next_checkin
 
         monitor_environment = MonitorEnvironment.objects.get(id=checkin.monitor_environment.id)
         assert monitor_environment.status == MonitorStatus.OK

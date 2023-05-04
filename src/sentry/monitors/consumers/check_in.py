@@ -184,6 +184,7 @@ def _process_message(wrapper: Dict) -> None:
                     status=status,
                     date_added=date_added,
                     date_updated=start_time,
+                    expected_time=monitor_environment.next_checkin,
                 )
 
                 signal_first_checkin(project, monitor)

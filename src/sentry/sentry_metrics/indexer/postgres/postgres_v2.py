@@ -126,7 +126,7 @@ class PGStringIndexerV2(StringIndexer):
             [
                 UseCaseKeyResult(
                     use_case_id=(
-                        UseCaseID(db_obj.use_case_id)
+                        UseCaseID.TRANSACTIONS
                         if self._get_metric_path_key(strings.keys()) is UseCaseKey.PERFORMANCE
                         else UseCaseID.SESSIONS
                     ),

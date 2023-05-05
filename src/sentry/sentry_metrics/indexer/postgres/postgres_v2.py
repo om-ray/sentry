@@ -203,7 +203,7 @@ class PGStringIndexerV2(StringIndexer):
             if filtered_db_write_keys.size == 0:
                 return db_read_key_results.merge(rate_limited_key_results)
 
-            if use_case_path_key is not UseCaseKey.RELEASE_HEALTH:
+            if use_case_path_key is UseCaseKey.PERFORMANCE:
                 new_records = [
                     self._get_table_from_use_case_ids(strings.keys())(
                         organization_id=int(organization_id),
@@ -250,11 +250,9 @@ class PGStringIndexerV2(StringIndexer):
 
     def resolve(self, use_case_id: UseCaseKey, org_id: int, string: str) -> Optional[int]:
         """Lookup the integer ID for a string.
-
         Returns None if the entry cannot be found.
-
         """
-        table = self._table(use_case_id)
+        table = self._get_table_from_metric_path_key(use_case_id)
         try:
             id: int = table.objects.using_replica().get(organization_id=org_id, string=string).id
         except table.DoesNotExist:
@@ -264,10 +262,9 @@ class PGStringIndexerV2(StringIndexer):
 
     def reverse_resolve(self, use_case_id: UseCaseKey, org_id: int, id: int) -> Optional[str]:
         """Lookup the stored string for a given integer ID.
-
         Returns None if the entry cannot be found.
         """
-        table = self._table(use_case_id)
+        table = self._get_table_from_metric_path_key(use_case_id)
         try:
             obj = table.objects.get_from_cache(id=id, use_replica=True)
         except table.DoesNotExist:
@@ -276,9 +273,6 @@ class PGStringIndexerV2(StringIndexer):
         assert obj.organization_id == org_id
         string: str = obj.string
         return string
-
-    def _table(self, use_case_id: UseCaseKey) -> IndexerTable:
-        return TABLE_MAPPING[use_case_id]
 
     def _get_metric_path_key(self, use_case_ids: Collection[UseCaseID]) -> UseCaseKey:
         metrics_paths = {METRIC_PATH_MAPPING[use_case_id] for use_case_id in use_case_ids}

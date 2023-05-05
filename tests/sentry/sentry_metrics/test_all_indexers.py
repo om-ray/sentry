@@ -98,10 +98,10 @@ def test_indexer(indexer, indexer_cache):
     # create a record with diff org_id but same string that we test against
     indexer.record(use_case_id, 999, "hey")
 
+    true_use_case_id = REVERSE_METRIC_PATH_MAPPING[use_case_id]
     assert list(
         indexer_cache.get_many(
-            [f"{org1_id}:{string}" for string in strings],
-            cache_namespace=REVERSE_METRIC_PATH_MAPPING[use_case_id].value,
+            [f"{true_use_case_id.value}:{org1_id}:{string}" for string in strings],
         ).values()
     ) == [None, None, None]
 
@@ -218,8 +218,12 @@ def test_already_cached_plus_read_results(indexer, indexer_cache) -> None:
     for the same organization.
     """
     org_id = 8
-    cached = {f"{org_id}:beep": 10, f"{org_id}:boop": 11}
-    indexer_cache.set_many(cached, REVERSE_METRIC_PATH_MAPPING[use_case_id].value)
+    true_use_case_id = REVERSE_METRIC_PATH_MAPPING[use_case_id]
+    cached = {
+        f"{true_use_case_id.value}:{org_id}:beep": 10,
+        f"{true_use_case_id.value}:{org_id}:boop": 11,
+    }
+    indexer_cache.set_many(cached)
 
     raw_indexer = indexer
     indexer = CachingIndexer(indexer_cache, indexer)

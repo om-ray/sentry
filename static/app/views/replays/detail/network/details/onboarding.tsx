@@ -200,7 +200,7 @@ function SetupInstructions({
       <h1>{title}</h1>
       <p>
         {tct(
-          `To protect user privacy, Session Replay defaults to not capturing the request or response headers. However, we provide the option to do so, if it’s critical to your debugging process. [link].`,
+          `To protect user privacy, Session Replay defaults to not capturing the request or response headers and bodies. However, we provide the option to do so, if it’s critical to your debugging process. [link].`,
           {
             link: (
               <ExternalLink href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details">

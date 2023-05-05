@@ -655,6 +655,7 @@ def process_snoozes(job: PostProcessJob) -> None:
     if job["is_reprocessed"] or not job["has_reappeared"]:
         return
 
+    from sentry import analytics
     from sentry.issues.escalating import is_escalating
     from sentry.models import (
         Activity,
@@ -674,7 +675,20 @@ def process_snoozes(job: PostProcessJob) -> None:
         and group.status == GroupStatus.IGNORED
         and group.substatus == GroupSubStatus.UNTIL_ESCALATING
     ):
-        job["has_reappeared"] = is_escalating(group)
+        if is_escalating(group):
+            group.substatus = GroupSubStatus.ESCALATING
+            group.status = GroupStatus.UNRESOLVED
+            group.save(update_fields=["status", "substatus"])
+            add_group_to_inbox(group, GroupInboxReason.ESCALATING)
+            record_group_history(group, GroupHistoryStatus.ESCALATING)
+
+            analytics.record(
+                "issue.escalating",
+                organization_id=group.project.organization.id,
+                project_id=group.project.id,
+                group_id=group.id,
+            )
+            job["has_reappeared"] = True
         return
 
     with metrics.timer("post_process.process_snoozes.duration"):
@@ -699,12 +713,26 @@ def process_snoozes(job: PostProcessJob) -> None:
                 "user_count": snooze.user_count,
                 "user_window": snooze.user_window,
             }
-            if features.has("organizations:issue-states", group.organization):
-                add_group_to_inbox(group, GroupInboxReason.ONGOING, snooze_details)
-                record_group_history(group, GroupHistoryStatus.ONGOING)
+            if features.has("organizations:escalating-issue", group.organization):
+                add_group_to_inbox(group, GroupInboxReason.ESCALATING, snooze_details)
+                record_group_history(group, GroupHistoryStatus.ESCALATING)
+                group.substatus = GroupSubStatus.ESCALATING
+                group.status = GroupStatus.UNRESOLVED
+                group.save(update_fields=["status", "substatus"])
+                analytics.record(
+                    "issue.escalating",
+                    organization_id=group.project.organization.id,
+                    project_id=group.project.id,
+                    group_id=group.id,
+                )
+
             else:
                 add_group_to_inbox(group, GroupInboxReason.UNIGNORED, snooze_details)
                 record_group_history(group, GroupHistoryStatus.UNIGNORED)
+                group.status = GroupStatus.UNRESOLVED
+                group.substatus = GroupSubStatus.ONGOING
+                group.save(update_fields=["status", "substatus"])
+
             Activity.objects.create(
                 project=group.project,
                 group=group,
@@ -714,9 +742,7 @@ def process_snoozes(job: PostProcessJob) -> None:
             )
 
             snooze.delete()
-            group.status = GroupStatus.UNRESOLVED
-            group.substatus = GroupSubStatus.ONGOING
-            group.save(update_fields=["status", "substatus"])
+
             issue_unignored.send_robust(
                 project=group.project,
                 user_id=None,

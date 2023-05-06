@@ -6,6 +6,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union, cast
 
+from sentry.models.team import Team
+from sentry.models.user import User
 from sentry.notifications.types import (
     NotificationScopeType,
     NotificationSettingOptionValues,
@@ -20,7 +22,7 @@ from sentry.silo import SiloMode
 from sentry.types.integrations import ExternalProviders
 
 if TYPE_CHECKING:
-    from sentry.models import NotificationSetting, Team, User
+    from sentry.models import NotificationSetting
 
 
 class RpcNotificationSetting(RpcModel):
@@ -51,7 +53,7 @@ class NotificationsService(RpcService):
         *,
         type: NotificationSettingTypes,
         parent_id: int,
-        recipients: Sequence[RpcActor],
+        recipients: Sequence[Union[Team, RpcTeam, User, RpcUser]],
     ) -> List[RpcNotificationSetting]:
         pass
 

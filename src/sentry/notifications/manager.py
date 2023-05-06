@@ -25,6 +25,7 @@ from sentry.notifications.types import (
 )
 from sentry.services.hybrid_cloud.actor import ActorType, RpcActor
 from sentry.services.hybrid_cloud.notifications import notifications_service
+from sentry.services.hybrid_cloud.organization import RpcTeam
 from sentry.types.integrations import ExternalProviders
 from sentry.utils.sdk import configure_scope
 
@@ -319,25 +320,23 @@ class NotificationsManager(BaseManager["NotificationSetting"]):
     def filter_to_accepting_recipients(
         self,
         parent: Union[Organization, Project],
-        recipients: Iterable[RpcActor | Team | RpcUser],
+        recipients: Iterable[RpcTeam | Team | RpcUser | User],
         type: NotificationSettingTypes = NotificationSettingTypes.ISSUE_ALERTS,
-    ) -> Mapping[ExternalProviders, Iterable[RpcActor]]:
+    ) -> Mapping[ExternalProviders, Iterable[Team | RpcTeam | User | RpcUser]]:
         """
         Filters a list of teams or users down to the recipients by provider who
         are subscribed to alerts. We check both the project level settings and
         global default settings.
         """
-        recipient_actors = [RpcActor.from_object(r) for r in recipients]
-
         notification_settings = notifications_service.get_settings_for_recipient_by_parent(
-            type=type, parent_id=parent.id, recipients=recipient_actors
+            type=type, parent_id=parent.id, recipients=recipients
         )
         notification_settings_by_recipient = transform_to_notification_settings_by_recipient(
-            notification_settings, recipient_actors
+            notification_settings, recipients
         )
 
         mapping = defaultdict(set)
-        for recipient in recipient_actors:
+        for recipient in recipients:
             providers = where_should_recipient_be_notified(
                 notification_settings_by_recipient, recipient, type
             )
@@ -347,7 +346,7 @@ class NotificationsManager(BaseManager["NotificationSetting"]):
 
     def get_notification_recipients(
         self, project: Project
-    ) -> Mapping[ExternalProviders, Iterable[RpcActor]]:
+    ) -> Mapping[ExternalProviders, Iterable[Team | RpcTeam | User | RpcUser]]:
         """
         Return a set of users that should receive Issue Alert emails for a given
         project. To start, we get the set of all users. Then we fetch all of
